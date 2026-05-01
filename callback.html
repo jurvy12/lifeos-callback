@@ -3,14 +3,12 @@
 <head><title>LIFE.OS Auth</title></head>
 <body>
 <script>
-  if(window.location.hash){
-    const params=new URLSearchParams(window.location.hash.substring(1));
-    const token=params.get('access_token');
-    if(token&&window.opener){
-      window.opener.postMessage({spotifyToken:token},'*');
-      document.body.innerHTML='<p style="font-family:monospace;color:green">✓ Authenticated. You can close this tab.</p>';
-      setTimeout(()=>window.close(),1500);
-    }
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (code && window.opener) {
+    window.opener.postMessage({ spotifyCode: code }, '*');
+    document.body.innerHTML = '<p style="font-family:monospace;color:green;padding:20px">✓ Authenticated. Closing...</p>';
+    setTimeout(() => window.close(), 1500);
   }
 </script>
 </body>
