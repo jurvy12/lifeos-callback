@@ -1,1 +1,4486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>LIFE.OS // v5</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============ TERMINAL THEME ============ */
+:root{
+  /* Near-black terminal surfaces */
+  --bg:#050706;
+  --bg2:#0a0d0a;
+  --bg3:#0e120e;
+  --bg4:#141a14;
+  --bg5:#1b241b;
+  --line:#1e2a1f;
+  --line2:#2a3a2b;
+  --line3:#3a5140;
 
+  /* Terminal green = primary accent (mapped onto the old --gold vars so the whole UI reskins) */
+  --gold:#2ee66b;
+  --gold2:#22c55e;
+  --gold3:#15803d;
+  --goldLight:#5cf58c;
+  --goldGlow:rgba(46,230,107,.35);
+  --goldDim:rgba(46,230,107,.10);
+
+  /* Secondary accents */
+  --neon:#f5a524;         /* amber = warnings / alerts */
+  --cyan:#38bdf8;         /* sky = links / secondary data */
+  --cyanGlow:rgba(56,189,248,.28);
+  --magenta:#e879f9;
+  --magentaGlow:rgba(232,121,249,.28);
+  --teal:#2ee66b;         /* alias to green */
+  --tealGlow:rgba(46,230,107,.3);
+
+  --text:#dff5e6;
+  --dim:#7f9a86;
+  --faint:#4c5f52;
+  --red:#fb7185;
+  --redGlow:rgba(251,113,133,.28);
+
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --display:'JetBrains Mono',ui-monospace,monospace;
+  --body:'JetBrains Mono',ui-monospace,monospace;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--body);
+  font-size:14px;
+  line-height:1.5;
+  min-height:100vh;
+  font-weight:400;
+  letter-spacing:.01em;
+}
+
+/* Terminal ambient — faint green glow bottom, subtle vignette */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse at 50% 120%,rgba(46,230,107,.06) 0%,transparent 55%),
+    radial-gradient(ellipse at 50% -10%,rgba(46,230,107,.03) 0%,transparent 50%),
+    linear-gradient(180deg,#050706 0%,#070a07 100%);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* CRT scan lines */
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(46,230,107,.015) 2px,
+    rgba(46,230,107,.015) 3px
+  );
+  pointer-events:none;
+  z-index:1;
+}
+
+/* Grid background */
+.grid-bg{
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(46,230,107,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(46,230,107,.035) 1px,transparent 1px);
+  background-size:44px 44px;
+  pointer-events:none;
+  z-index:0;
+  opacity:.4;
+}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--gold3);border-radius:0}
+::-webkit-scrollbar-thumb:hover{background:var(--gold2)}
+
+.wrap{
+  max-width:1380px;
+  margin:0 auto;
+  padding:18px 18px 60px;
+  position:relative;
+  z-index:2;
+}
+
+/* ============ TOP BAR ============ */
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 0 14px;
+  margin-bottom:14px;
+  border-bottom:1px solid var(--line);
+  position:relative;
+}
+.topbar::after{
+  content:'';
+  position:absolute;
+  bottom:-1px;
+  left:0;
+  width:120px;
+  height:1px;
+  background:linear-gradient(90deg,var(--gold),transparent);
+}
+.logo{
+  font-family:var(--display);
+  font-weight:900;
+  font-size:18px;
+  letter-spacing:.18em;
+  color:var(--gold);
+  text-shadow:0 0 25px var(--goldGlow);
+  position:relative;
+}
+.logo::before{
+  content:'';
+  display:inline-block;
+  width:8px;
+  height:8px;
+  background:var(--gold);
+  margin-right:10px;
+  vertical-align:middle;
+  box-shadow:0 0 12px var(--goldGlow);
+  animation:pulse 2s infinite;
+}
+.logo sub{
+  font-family:var(--mono);
+  font-size:9px;
+  color:var(--cyan);
+  font-weight:500;
+  letter-spacing:.2em;
+  margin-left:8px;
+  vertical-align:middle;
+}
+@keyframes pulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.5;transform:scale(.85)}
+}
+.topr{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.clk{
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--cyan);
+  letter-spacing:.08em;
+  text-shadow:0 0 8px var(--cyanGlow);
+}
+.dot{
+  display:inline-block;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:var(--teal);
+  margin-left:6px;
+  vertical-align:middle;
+  animation:pulse 2s infinite;
+  box-shadow:0 0 10px var(--tealGlow);
+}
+.pstat{
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:.1em;
+  padding:3px 8px;
+  border:1px solid;
+  border-radius:0;
+}
+.pstat.ok{color:var(--teal);border-color:var(--teal);box-shadow:0 0 8px var(--tealGlow)}
+.pstat.ld{color:var(--cyan);border-color:var(--cyan)}
+.pstat.err{color:var(--red);border-color:var(--red);box-shadow:0 0 8px var(--redGlow)}
+
+/* ============ PLAYER STRIP ============ */
+.player{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:18px;
+  align-items:center;
+  padding:16px 20px;
+  background:linear-gradient(135deg,var(--bg2),var(--bg3));
+  border:1px solid var(--line2);
+  border-radius:0;
+  margin-bottom:14px;
+  position:relative;
+  overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+}
+.player::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:1px;
+  background:linear-gradient(90deg,var(--neon),var(--gold),var(--cyan),transparent);
+}
+.player::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 100% 50%,var(--goldGlow) 0%,transparent 30%);
+  opacity:.15;
+  pointer-events:none;
+}
+
+/* Level display - LARGE with evolution icon */
+.levelbox{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  position:relative;
+  z-index:1;
+}
+.lvIcon{
+  width:64px;
+  height:64px;
+  position:relative;
+  border:1.5px solid var(--gold2);
+  background:linear-gradient(135deg,var(--bg3),var(--bg4));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px);
+  box-shadow:0 0 20px var(--goldGlow),inset 0 0 15px rgba(212,167,60,.1);
+}
+.lvIcon svg{
+  width:42px;
+  height:42px;
+  position:relative;
+  z-index:2;
+}
+/* Liquid fill effect */
+.lvLiquid{
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  background:linear-gradient(180deg,rgba(0,224,144,.4),rgba(0,224,144,.7));
+  transition:height 1s ease;
+  z-index:1;
+  box-shadow:inset 0 2px 4px rgba(0,224,144,.5);
+}
+.lvLiquid::before{
+  content:'';
+  position:absolute;
+  top:-3px;
+  left:0;
+  right:0;
+  height:5px;
+  background:rgba(0,255,160,.6);
+  animation:wave 3s ease-in-out infinite;
+}
+@keyframes wave{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-2px)}
+}
+.lvInfo{
+  font-family:var(--display);
+  min-width:0;
+}
+.lvNum{
+  font-size:32px;
+  font-weight:900;
+  color:var(--gold);
+  line-height:1;
+  text-shadow:0 0 20px var(--goldGlow);
+  letter-spacing:.04em;
+}
+.lvLabel{
+  font-family:var(--mono);
+  font-size:8px;
+  color:var(--cyan);
+  letter-spacing:.25em;
+  margin-top:3px;
+  font-weight:500;
+}
+.lvRank{
+  font-family:var(--display);
+  font-size:11px;
+  color:var(--text);
+  letter-spacing:.15em;
+  font-weight:700;
+  margin-top:2px;
+}
+
+.pmid{
+  min-width:0;
+}
+.xpr{
+  display:flex;
+  justify-content:space-between;
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--dim);
+  margin-bottom:5px;
+  letter-spacing:.05em;
+}
+.xpr strong{color:var(--gold);font-weight:700}
+.xptrack{
+  height:6px;
+  background:var(--bg);
+  border:1px solid var(--line2);
+  overflow:hidden;
+  position:relative;
+}
+.xpfill{
+  height:100%;
+  background:linear-gradient(90deg,var(--gold3),var(--gold),var(--goldLight));
+  transition:width 1s;
+  position:relative;
+  box-shadow:0 0 10px var(--goldGlow);
+}
+.xpfill::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,transparent 30%,rgba(255,255,255,.3) 50%,transparent 70%);
+  animation:shimmer 3s infinite;
+}
+@keyframes shimmer{0%{transform:translateX(-200%)}100%{transform:translateX(200%)}}
+
+.pright{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.streak{
+  text-align:center;
+  font-family:var(--display);
+  min-width:50px;
+}
+.strkn{
+  font-size:24px;
+  font-weight:900;
+  color:var(--teal);
+  line-height:1;
+  text-shadow:0 0 15px var(--tealGlow);
+  letter-spacing:.05em;
+}
+.strkl{
+  font-family:var(--mono);
+  font-size:8px;
+  color:var(--cyan);
+  letter-spacing:.18em;
+  margin-top:3px;
+}
+
+/* ============ MORNING BRIEFING ============ */
+.briefing{
+  background:linear-gradient(90deg,var(--bg2),var(--bg3),var(--bg2));
+  border:1px solid var(--line);
+  border-left:3px solid var(--neon);
+  padding:12px 16px;
+  margin-bottom:14px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  position:relative;
+  overflow:hidden;
+}
+.briefing::before{
+  content:'';
+  position:absolute;
+  top:0;
+  right:0;
+  width:200px;
+  height:100%;
+  background:linear-gradient(90deg,transparent,var(--magentaGlow));
+  opacity:.3;
+}
+.briefIcon{
+  font-family:var(--display);
+  font-size:18px;
+  color:var(--neon);
+  flex-shrink:0;
+  font-weight:900;
+  text-shadow:0 0 15px var(--magentaGlow);
+  position:relative;
+  z-index:1;
+}
+.briefTxt{
+  font-family:var(--body);
+  font-size:13px;
+  color:var(--text);
+  font-weight:500;
+  letter-spacing:.02em;
+  line-height:1.5;
+  position:relative;
+  z-index:1;
+}
+.briefTxt strong{color:var(--gold);font-weight:700}
+
+/* ============ TABS ============ */
+.tabs{
+  display:flex;
+  gap:0;
+  margin-bottom:14px;
+  border-bottom:1px solid var(--line);
+  flex-wrap:wrap;
+  position:relative;
+}
+.tab{
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:.2em;
+  color:var(--faint);
+  padding:9px 14px;
+  background:none;
+  border:none;
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+  margin-bottom:-1px;
+  transition:all .2s;
+  font-weight:600;
+  position:relative;
+}
+.tab:hover{
+  color:var(--cyan);
+  text-shadow:0 0 8px var(--cyanGlow);
+}
+.tab.on{
+  color:var(--gold);
+  border-bottom-color:var(--gold);
+  text-shadow:0 0 10px var(--goldGlow);
+  background:linear-gradient(180deg,transparent 70%,var(--goldDim));
+}
+.pane{display:none}
+.pane.on{display:block;animation:fadeIn .4s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============ CARDS ============ */
+.card{
+  background:var(--bg2);
+  border:1px solid var(--line);
+  margin-bottom:12px;
+  position:relative;
+  overflow:hidden;
+}
+.card:last-child{margin-bottom:0}
+.card::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:0;
+  width:30px;
+  height:1px;
+  background:var(--gold);
+}
+.card::after{
+  content:'';
+  position:absolute;
+  top:0;
+  right:0;
+  width:30px;
+  height:1px;
+  background:var(--cyan);
+}
+.ch{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:9px 14px;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg,var(--bg2),var(--bg3));
+}
+.ct{
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:.22em;
+  color:var(--cyan);
+  font-weight:700;
+}
+.ct::before{
+  content:'▣ ';
+  color:var(--gold);
+}
+.ctag{
+  font-family:var(--mono);
+  font-size:8px;
+  padding:2px 7px;
+  border:1px solid var(--line2);
+  color:var(--gold);
+  letter-spacing:.1em;
+  background:var(--bg);
+}
+.cb{padding:14px 16px}
+
+/* ============ GRIDS ============ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.hero{display:grid;grid-template-columns:1.45fr .9fr 1.05fr;gap:12px;margin-bottom:12px}
+@media(max-width:1000px){.g2,.g3,.g4,.hero{grid-template-columns:1fr!important}}
+
+/* ============ METRICS ============ */
+.met{
+  background:var(--bg3);
+  padding:13px 14px;
+  border:1px solid var(--line);
+  position:relative;
+  overflow:hidden;
+}
+.met::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:1px;
+  background:linear-gradient(90deg,var(--gold),transparent);
+}
+.ml{
+  font-family:var(--mono);
+  font-size:8px;
+  color:var(--cyan);
+  letter-spacing:.18em;
+  margin-bottom:4px;
+  font-weight:600;
+}
+.mv{
+  font-family:var(--display);
+  font-size:22px;
+  font-weight:800;
+  line-height:1.1;
+  letter-spacing:.02em;
+}
+.ms{
+  font-family:var(--mono);
+  font-size:9px;
+  color:var(--dim);
+  margin-top:3px;
+}
+
+/* ============ BARS ============ */
+.bt{
+  height:6px;
+  background:var(--bg);
+  border:1px solid var(--line);
+  overflow:hidden;
+  margin:5px 0;
+  position:relative;
+}
+.bf{
+  height:100%;
+  transition:width .6s;
+  position:relative;
+}
+
+/* ============ NET WORTH ============ */
+.nwglow{position:relative;overflow:hidden}
+.nwglow::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse at 25% 40%,var(--goldDim),transparent 55%);
+  pointer-events:none;
+  z-index:0;
+}
+.nwglow .cb{position:relative;z-index:1}
+.nwamt{
+  font-family:var(--display);
+  font-weight:900;
+  font-size:54px;
+  color:var(--gold);
+  letter-spacing:.02em;
+  line-height:1;
+  margin-bottom:8px;
+  text-shadow:0 0 30px var(--goldGlow);
+  cursor:pointer;
+  user-select:none;
+  transition:all .2s;
+}
+.nwamt:hover{
+  text-shadow:0 0 40px var(--goldGlow);
+  filter:brightness(1.1);
+}
+.nwamt .cur{
+  font-size:26px;
+  color:var(--gold2);
+  vertical-align:top;
+  margin-right:3px;
+  font-weight:700;
+}
+.nwamt.hidden{filter:blur(8px) brightness(.8)}
+.privNote{
+  font-family:var(--mono);
+  font-size:9px;
+  color:var(--cyan);
+  margin-bottom:10px;
+  letter-spacing:.1em;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.privNote::before{
+  content:'◉';
+  color:var(--gold);
+}
+.nwgrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1px 14px;
+  font-family:var(--mono);
+  font-size:11px;
+}
+.nwr{
+  display:flex;
+  justify-content:space-between;
+  padding:4px 0;
+  border-bottom:1px solid rgba(58,37,102,.4);
+}
+.nwk{color:var(--cyan);letter-spacing:.05em;font-size:10px}
+.nwv{color:var(--text);font-weight:600}
+.nwv.hidden{filter:blur(6px)}
+
+/* ============ DUPLEX ============ */
+.dcard{
+  background:linear-gradient(135deg,var(--bg2),var(--bg3),var(--bg4));
+  border:1px solid var(--gold3);
+  padding:16px 18px;
+  margin-bottom:12px;
+  position:relative;
+  overflow:hidden;
+}
+.dcard::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:2px;
+  background:linear-gradient(90deg,var(--gold),transparent);
+}
+.dcard::after{
+  content:'>> MAIN QUEST';
+  position:absolute;
+  top:8px;
+  right:14px;
+  font-family:var(--mono);
+  font-size:8px;
+  letter-spacing:.25em;
+  color:var(--gold3);
+  font-weight:700;
+}
+.dt{
+  font-family:var(--display);
+  font-weight:800;
+  font-size:16px;
+  margin-bottom:2px;
+  letter-spacing:.05em;
+  color:var(--text);
+}
+.ds{
+  font-family:var(--mono);
+  font-size:9px;
+  color:var(--cyan);
+  margin-bottom:12px;
+  letter-spacing:.05em;
+}
+.dn{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  margin-bottom:8px;
+}
+.dc{
+  font-family:var(--display);
+  font-weight:900;
+  font-size:30px;
+  color:var(--gold);
+  text-shadow:0 0 20px var(--goldGlow);
+  letter-spacing:.02em;
+}
+.dgt{font-family:var(--mono);font-size:13px;color:var(--faint)}
+.dbt{
+  height:14px;
+  background:var(--bg);
+  border:1px solid var(--line2);
+  overflow:hidden;
+  margin-bottom:6px;
+  position:relative;
+}
+.dbf{
+  height:100%;
+  background:linear-gradient(90deg,var(--gold3),var(--gold),var(--goldLight));
+  transition:width .8s;
+  position:relative;
+  box-shadow:0 0 10px var(--goldGlow);
+}
+.dbf::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%);
+  animation:shimmer 3s infinite;
+}
+.dpr{
+  display:flex;
+  justify-content:space-between;
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--dim);
+}
+.deta{
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--teal);
+  margin-top:8px;
+  font-weight:600;
+  letter-spacing:.04em;
+  text-shadow:0 0 8px var(--tealGlow);
+}
+
+/* ============ TASKS ============ */
+.tseg{margin-bottom:10px}
+.tsegl{
+  font-family:var(--mono);
+  font-size:8px;
+  letter-spacing:.25em;
+  color:var(--cyan);
+  padding:6px 0 4px;
+  border-bottom:1px solid var(--line);
+  margin-bottom:3px;
+  font-weight:700;
+}
+.trow{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:5px 0;
+  border-bottom:1px solid rgba(58,37,102,.35);
+  transition:all .15s;
+}
+.trow:last-child{border-bottom:none}
+.trow:hover{background:rgba(96,64,168,.05);padding-left:4px}
+.chk{
+  width:16px;
+  height:16px;
+  border:1.5px solid var(--gold3);
+  cursor:pointer;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all .15s;
+  background:var(--bg);
+  position:relative;
+}
+.chk:hover{
+  border-color:var(--gold);
+  box-shadow:0 0 8px var(--goldGlow);
+}
+.chk.on{
+  background:var(--teal);
+  border-color:var(--teal);
+  box-shadow:0 0 10px var(--tealGlow);
+}
+.chk.on::after{
+  content:'';
+  width:4px;
+  height:7px;
+  border:1.5px solid var(--bg);
+  border-top:none;
+  border-left:none;
+  transform:rotate(45deg) translate(-1px,-1px);
+}
+.tn{
+  flex:1;
+  font-size:12px;
+  color:var(--text);
+  font-weight:500;
+  letter-spacing:.01em;
+}
+.tn.done{color:var(--faint);text-decoration:line-through}
+.txp{
+  font-family:var(--mono);
+  font-size:9px;
+  font-weight:700;
+  color:var(--gold);
+  flex-shrink:0;
+  letter-spacing:.05em;
+}
+.txp.bonus{color:var(--neon);text-shadow:0 0 6px var(--magentaGlow)}
+.tprog{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 12px;
+  background:var(--bg);
+  border:1px solid var(--line);
+  margin-bottom:12px;
+  position:relative;
+  overflow:hidden;
+}
+.tprog::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;
+  width:2px;height:100%;
+  background:var(--gold);
+}
+.tpct{
+  font-family:var(--display);
+  font-weight:900;
+  font-size:18px;
+  color:var(--gold);
+  min-width:48px;
+  text-shadow:0 0 12px var(--goldGlow);
+}
+.tinfo{flex:1;min-width:0}
+.tlbl{
+  font-family:var(--mono);
+  font-size:8px;
+  color:var(--cyan);
+  letter-spacing:.1em;
+  margin-bottom:3px;
+}
+.tlw{max-height:380px;overflow-y:auto;padding-right:4px}
+
+/* ============ WEEKLY TASKS ============ */
+.wkly{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid var(--line);
+}
+
+/* ============ WEEK CALENDAR ============ */
+.wkcal{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:4px;
+}
+.wkd{
+  aspect-ratio:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:700;
+  border:1px solid var(--line);
+  background:var(--bg);
+  color:var(--faint);
+  position:relative;
+  letter-spacing:.05em;
+}
+.wkd.full{
+  background:linear-gradient(135deg,rgba(0,224,144,.2),rgba(0,224,144,.4));
+  border-color:var(--teal);
+  color:var(--teal);
+  box-shadow:inset 0 0 8px rgba(0,224,144,.2);
+}
+.wkd.partial{
+  background:rgba(212,167,60,.15);
+  border-color:var(--gold3);
+  color:var(--gold);
+}
+.wkd.today{
+  border:2px solid var(--gold);
+  box-shadow:0 0 12px var(--goldGlow);
+  color:var(--gold);
+}
+.wkd.future{opacity:.3}
+
+/* ============ POSITIONS TABLE ============ */
+.pos-header{
+  display:grid;
+  grid-template-columns:1.5fr .9fr .9fr 1fr .9fr;
+  gap:8px;
+  padding:8px 0;
+  border-bottom:1px solid var(--gold3);
+  font-family:var(--mono);
+  font-size:8px;
+  letter-spacing:.2em;
+  color:var(--cyan);
+  font-weight:700;
+  margin-bottom:4px;
+}
+.pos-header div:nth-child(2),
+.pos-header div:nth-child(3),
+.pos-header div:nth-child(4),
+.pos-header div:nth-child(5){text-align:right}
+.prow{
+  display:grid;
+  grid-template-columns:1.5fr .9fr .9fr 1fr .9fr;
+  gap:8px;
+  align-items:center;
+  padding:9px 0;
+  border-bottom:1px solid rgba(58,37,102,.4);
+  font-size:12px;
+  transition:all .15s;
+}
+.prow:hover{background:rgba(96,64,168,.04)}
+.prow:last-child{border-bottom:none}
+.psym{font-family:var(--mono);font-weight:700;font-size:12px;color:var(--gold);letter-spacing:.05em}
+.psub{font-family:var(--mono);font-size:8px;color:var(--faint);margin-top:1px;letter-spacing:.02em}
+.psh{font-family:var(--mono);font-size:10px;color:var(--dim);text-align:right}
+.plv{font-family:var(--mono);font-size:10px;color:var(--cyan);text-align:right;font-weight:600}
+.pvl{font-family:var(--mono);font-weight:700;font-size:12px;color:var(--text);text-align:right}
+.pvl.hidden{filter:blur(5px)}
+.ppct{
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:700;
+  text-align:right;
+  letter-spacing:.02em;
+}
+.ppct.up{color:var(--teal);text-shadow:0 0 6px var(--tealGlow)}
+.ppct.dn{color:var(--red);text-shadow:0 0 6px var(--redGlow)}
+.spec{
+  background:linear-gradient(90deg,rgba(255,48,96,.04),transparent);
+  border-left:2px solid var(--red);
+  padding-left:6px!important;
+}
+
+/* ============ PIE CHARTS ============ */
+.piewrap{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex-wrap:wrap;
+}
+.pielabel{
+  font-family:var(--display);
+  font-size:9px;
+  color:var(--gold);
+  letter-spacing:.18em;
+  font-weight:700;
+  margin-bottom:6px;
+}
+.leg{flex:1;min-width:120px}
+.legr{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:3px 0;
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--dim);
+}
+.legd{
+  width:9px;
+  height:9px;
+  flex-shrink:0;
+  border:1px solid rgba(255,255,255,.1);
+}
+.legv{
+  margin-left:auto;
+  color:var(--text);
+  font-weight:600;
+}
+.legv.hidden{filter:blur(5px)}
+
+/* ============ TREND CHART ============ */
+.trend-canvas{
+  width:100%;
+  height:200px;
+  background:var(--bg);
+  border:1px solid var(--line);
+  display:block;
+}
+
+/* ============ QUESTS - CYBERPUNK ============ */
+.quest-priority-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+  padding:8px 12px;
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-radius:2px;
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:.15em;
+}
+.qpb-item{
+  padding:5px 10px;
+  border:1px solid var(--line2);
+  border-radius:2px;
+  color:var(--dim);
+  cursor:pointer;
+  transition:all .2s;
+  min-height:30px;
+  display:flex;
+  align-items:center;
+}
+.qpb-item.active{
+  border-color:var(--gold);
+  color:var(--gold);
+  background:var(--goldDim);
+  box-shadow:0 0 8px var(--goldGlow);
+}
+.quest-card{
+  background:linear-gradient(135deg,var(--bg2),var(--bg3));
+  border:1px solid var(--line);
+  padding:14px 16px;
+  margin-bottom:8px;
+  position:relative;
+  overflow:hidden;
+  transition:all .25s;
+  cursor:pointer;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+}
+.quest-card:hover{
+  border-color:var(--gold2);
+  transform:translateX(3px);
+  box-shadow:0 0 20px var(--goldDim);
+}
+.quest-card.urgent{
+  border-color:var(--red);
+  border-left:3px solid var(--red);
+  background:linear-gradient(135deg,var(--bg2),rgba(255,48,96,.05));
+}
+.quest-card.urgent::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:1px;
+  background:linear-gradient(90deg,var(--red),transparent);
+  animation:pulse 2s infinite;
+}
+.quest-card.done{
+  border-color:var(--teal2);
+  opacity:.6;
+}
+.quest-card.life{
+  border-color:var(--line2);
+  background:linear-gradient(135deg,var(--bg2),rgba(96,64,168,.08));
+}
+.qc-row{
+  display:grid;
+  grid-template-columns:48px 1fr auto;
+  gap:14px;
+  align-items:center;
+}
+.qc-icon{
+  width:48px;
+  height:48px;
+  background:linear-gradient(135deg,var(--bg3),var(--bg4));
+  border:1.5px solid var(--gold3);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  position:relative;
+  clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px),0 6px);
+  cursor:pointer;
+  transition:all .2s;
+}
+.qc-icon:hover{
+  border-color:var(--gold);
+  box-shadow:0 0 15px var(--goldGlow);
+}
+.qc-icon svg{
+  width:26px;
+  height:26px;
+  fill:var(--gold);
+}
+.quest-card.done .qc-icon{
+  background:linear-gradient(135deg,rgba(0,224,144,.15),rgba(0,224,144,.3));
+  border-color:var(--teal);
+}
+.quest-card.done .qc-icon svg{fill:var(--teal)}
+.quest-card.urgent .qc-icon{border-color:var(--red)}
+.quest-card.urgent .qc-icon svg{fill:var(--red)}
+.qc-info{min-width:0}
+.qc-name{
+  font-family:var(--display);
+  font-size:14px;
+  font-weight:700;
+  color:var(--text);
+  letter-spacing:.04em;
+  margin-bottom:2px;
+}
+.quest-card.done .qc-name{text-decoration:line-through;color:var(--faint)}
+.qc-sub{
+  font-family:var(--mono);
+  font-size:9px;
+  color:var(--dim);
+  letter-spacing:.05em;
+  margin-bottom:5px;
+}
+.qc-deadline{
+  font-family:var(--mono);
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.05em;
+  margin-bottom:6px;
+  display:inline-block;
+  padding:2px 8px;
+  border:1px solid;
+}
+.qc-deadline.overdue{
+  color:var(--red);
+  border-color:var(--red);
+  background:rgba(255,48,96,.08);
+  text-shadow:0 0 6px var(--redGlow);
+}
+.qc-deadline.soon{
+  color:var(--gold);
+  border-color:var(--gold3);
+  background:var(--goldDim);
+}
+.qc-deadline.ok{
+  color:var(--cyan);
+  border-color:var(--line2);
+}
+.qc-bar-track{
+  height:3px;
+  background:var(--bg);
+  overflow:hidden;
+  position:relative;
+}
+.qc-bar-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--cyan),var(--gold));
+  transition:width .6s;
+  box-shadow:0 0 6px var(--cyanGlow);
+}
+.qc-pct{
+  font-family:var(--display);
+  font-size:18px;
+  font-weight:900;
+  color:var(--gold);
+  letter-spacing:.02em;
+}
+.quest-card.done .qc-pct{color:var(--teal)}
+.qc-actions{
+  display:flex;
+  gap:6px;
+  margin-top:8px;
+}
+.qbtn{
+  font-family:var(--mono);
+  font-size:8px;
+  padding:3px 8px;
+  background:var(--bg);
+  border:1px solid var(--line2);
+  color:var(--dim);
+  cursor:pointer;
+  letter-spacing:.1em;
+  transition:all .15s;
+}
+.qbtn:hover{border-color:var(--gold);color:var(--gold)}
+.qbtn.danger:hover{border-color:var(--red);color:var(--red)}
+
+/* ============ SKILL TREE - DIABLO ============ */
+.skill-node{
+  background:linear-gradient(135deg,var(--bg2),var(--bg3));
+  border:1px solid var(--line2);
+  padding:14px 16px;
+  margin-bottom:10px;
+  position:relative;
+  overflow:hidden;
+  transition:all .3s;
+  clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px);
+}
+.skill-node:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 25px rgba(0,0,0,.4);
+}
+.skill-node::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:2px;
+  transition:width .5s;
+}
+.skill-glow{
+  position:absolute;
+  inset:0;
+  opacity:.06;
+  pointer-events:none;
+}
+.sn-top{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:10px;
+}
+.sn-icon{
+  width:40px;
+  height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:var(--display);
+  font-weight:900;
+  font-size:18px;
+  border:1.5px solid;
+  flex-shrink:0;
+  background:linear-gradient(135deg,var(--bg),var(--bg3));
+  clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px),0 6px);
+  box-shadow:0 0 15px rgba(0,0,0,.4);
+}
+.sn-info{flex:1;min-width:0}
+.sn-name{
+  font-family:var(--display);
+  font-size:14px;
+  font-weight:800;
+  letter-spacing:.08em;
+  margin-bottom:1px;
+}
+.sn-rank{
+  font-family:var(--mono);
+  font-size:9px;
+  color:var(--cyan);
+  letter-spacing:.05em;
+}
+.sn-xp{
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:700;
+  text-align:right;
+}
+.sn-bar{
+  height:5px;
+  background:var(--bg);
+  border:1px solid var(--line);
+  overflow:hidden;
+  margin-bottom:9px;
+}
+.sn-fill{
+  height:100%;
+  transition:width .5s;
+  box-shadow:0 0 10px currentColor;
+}
+.sn-perks{display:flex;flex-wrap:wrap;gap:5px}
+.perk{
+  font-family:var(--mono);
+  font-size:8px;
+  padding:2px 8px;
+  border:1px solid;
+  letter-spacing:.06em;
+  font-weight:600;
+}
+.perk.unlocked{
+  border-color:var(--teal);
+  color:var(--teal);
+  background:rgba(0,224,144,.1);
+  box-shadow:0 0 6px var(--tealGlow);
+}
+.perk.locked{
+  border-color:var(--line);
+  color:var(--faint);
+  background:var(--bg);
+}
+
+/* ============ ACHIEVEMENTS ============ */
+.arow{
+  display:grid;
+  grid-template-columns:26px 1fr auto;
+  gap:9px;
+  align-items:center;
+  padding:7px 0;
+  border-bottom:1px solid var(--line);
+}
+.arow:last-child{border-bottom:none}
+.aic{
+  width:26px;
+  height:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:11px;
+  flex-shrink:0;
+  border:1px solid;
+  clip-path:polygon(4px 0,calc(100% - 4px) 0,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0 calc(100% - 4px),0 4px);
+}
+.aic.done{
+  background:var(--gold);
+  color:var(--bg);
+  border-color:var(--gold);
+  box-shadow:0 0 10px var(--goldGlow);
+}
+.aic.locked{
+  background:var(--bg3);
+  color:var(--faint);
+  border-color:var(--line2);
+}
+.an{font-size:12px;font-weight:600}
+.an.locked{color:var(--faint)}
+.asub{font-family:var(--mono);font-size:9px;color:var(--cyan);margin-top:1px;letter-spacing:.04em}
+.axp{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--gold)}
+.axp.locked{color:var(--faint)}
+.mbtn{
+  font-family:var(--mono);
+  font-size:8px;
+  padding:2px 6px;
+  background:transparent;
+  border:1px solid var(--line2);
+  color:var(--dim);
+  cursor:pointer;
+  margin-left:6px;
+  letter-spacing:.06em;
+}
+.mbtn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ============ BODY ============ */
+.body-stat{
+  text-align:center;
+  padding:14px;
+  background:var(--bg3);
+  border:1px solid var(--line);
+  position:relative;
+  overflow:hidden;
+}
+.body-stat::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:1px;
+}
+.body-big{
+  font-family:var(--display);
+  font-size:30px;
+  font-weight:900;
+  line-height:1;
+  letter-spacing:.02em;
+}
+.body-lbl{
+  font-family:var(--mono);
+  font-size:9px;
+  color:var(--cyan);
+  letter-spacing:.15em;
+  margin-top:5px;
+  font-weight:700;
+}
+.rom-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:7px 0;
+  border-bottom:1px solid var(--line);
+  font-size:12px;
+}
+.rom-row:last-child{border-bottom:none}
+.rom-bar{
+  width:80px;
+  height:6px;
+  background:var(--bg);
+  border:1px solid var(--line);
+  overflow:hidden;
+  margin-left:auto;
+  margin-right:8px;
+}
+.rom-fill{height:100%;transition:width .4s}
+.status-pill{
+  font-family:var(--mono);
+  font-size:9px;
+  padding:3px 10px;
+  display:inline-block;
+  letter-spacing:.08em;
+  font-weight:700;
+  border:1px solid;
+}
+.status-red{color:var(--red);border-color:var(--red);background:rgba(255,48,96,.1);box-shadow:0 0 6px var(--redGlow)}
+.status-amber{color:var(--gold);border-color:var(--gold3);background:var(--goldDim)}
+.status-green{color:var(--teal);border-color:var(--teal);background:rgba(0,224,144,.1);box-shadow:0 0 6px var(--tealGlow)}
+
+/* ============ SPENDING ============ */
+.spend-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:7px 0;
+  border-bottom:1px solid var(--line);
+  font-size:12px;
+}
+.spend-row:last-child{border-bottom:none}
+.spend-cat{
+  font-family:var(--mono);
+  font-size:8px;
+  padding:1px 6px;
+  background:var(--bg3);
+  color:var(--cyan);
+  border:1px solid var(--line2);
+  letter-spacing:.08em;
+}
+.spend-amt{font-family:var(--mono);font-weight:700;color:var(--red)}
+
+/* ============ MONTH HEATMAP ============ */
+.mogrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.moday{
+  aspect-ratio:1;
+  background:var(--bg);
+  border:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:var(--mono);
+  font-size:9px;
+  color:var(--faint);
+  cursor:pointer;
+  transition:all .15s;
+}
+.moday:hover{border-color:var(--gold);transform:scale(1.05)}
+.moday.partial{
+  background:rgba(212,167,60,.15);
+  border-color:var(--gold3);
+  color:var(--gold);
+}
+.moday.full{
+  background:linear-gradient(135deg,rgba(0,224,144,.2),rgba(0,224,144,.4));
+  border-color:var(--teal);
+  color:var(--teal);
+  box-shadow:inset 0 0 6px rgba(0,224,144,.2);
+}
+.moday.today{box-shadow:0 0 0 2px var(--gold) inset}
+.moday.future{opacity:.2}
+.moday.red{
+  background:rgba(255,48,96,.12);
+  border-color:var(--red);
+  color:var(--red);
+}
+.moday.has-journal::after{
+  content:'';
+  position:absolute;
+  bottom:2px;
+  right:2px;
+  width:3px;
+  height:3px;
+  background:var(--cyan);
+  border-radius:50%;
+  box-shadow:0 0 4px var(--cyanGlow);
+}
+.moday{position:relative}
+
+/* ============ JOURNAL VIEWER ============ */
+.journal-viewer{
+  background:var(--bg);
+  border:1px solid var(--line);
+  padding:14px 16px;
+  margin-top:12px;
+  font-family:var(--body);
+  font-size:13px;
+  line-height:1.7;
+  color:var(--text);
+  white-space:pre-wrap;
+  min-height:100px;
+  max-height:400px;
+  overflow-y:auto;
+}
+.journal-date-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--cyan);
+  letter-spacing:.15em;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--line);
+  margin-bottom:10px;
+  text-transform:uppercase;
+  font-weight:700;
+}
+.journal-empty{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--faint);
+  text-align:center;
+  padding:30px;
+  font-style:italic;
+}
+.journal-nav{display:flex;gap:6px}
+.jnav-btn{
+  font-family:var(--mono);
+  font-size:9px;
+  padding:4px 10px;
+  background:var(--bg2);
+  border:1px solid var(--line2);
+  color:var(--cyan);
+  cursor:pointer;
+  letter-spacing:.1em;
+  transition:all .15s;
+}
+.jnav-btn:hover{border-color:var(--gold);color:var(--gold)}
+.jnav-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* ============ JOURNAL EDITOR (ON TODAY TAB) ============ */
+.journal{
+  width:100%;
+  background:var(--bg);
+  border:1px solid var(--line);
+  color:var(--text);
+  font-family:var(--body);
+  font-size:13px;
+  padding:12px;
+  resize:vertical;
+  min-height:100px;
+  line-height:1.6;
+}
+.journal:focus{
+  outline:none;
+  border-color:var(--gold3);
+  box-shadow:0 0 10px var(--goldDim);
+}
+
+/* ============ BUTTONS ============ */
+.btn{
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:.15em;
+  padding:6px 12px;
+  border:1px solid var(--line2);
+  background:var(--bg);
+  color:var(--cyan);
+  cursor:pointer;
+  transition:all .15s;
+  font-weight:600;
+}
+.btn:hover{
+  border-color:var(--gold);
+  color:var(--gold);
+  box-shadow:0 0 10px var(--goldGlow);
+}
+.btn-g{
+  background:linear-gradient(135deg,var(--gold3),var(--gold));
+  color:var(--bg);
+  border-color:var(--gold);
+  font-weight:700;
+  text-shadow:none;
+}
+.btn-g:hover{
+  background:var(--goldLight);
+  color:var(--bg);
+  box-shadow:0 0 15px var(--goldGlow);
+}
+.btn-r{color:var(--red)}
+.btn-r:hover{border-color:var(--red);color:var(--red);box-shadow:0 0 10px var(--redGlow)}
+.btn-sm{font-size:8px;padding:4px 9px}
+
+/* ============ INPUTS ============ */
+.inp{
+  background:var(--bg);
+  border:1px solid var(--line);
+  color:var(--text);
+  font-family:var(--body);
+  font-size:13px;
+  padding:7px 10px;
+  width:100%;
+}
+.inp:focus{outline:none;border-color:var(--gold3);box-shadow:0 0 8px var(--goldDim)}
+.inpsm{
+  width:90px;
+  font-family:var(--mono);
+  font-size:11px;
+  padding:5px 8px;
+  text-align:right;
+  color:var(--gold);
+  background:var(--bg);
+  border:1px solid var(--line);
+}
+.inpsm:focus{outline:none;border-color:var(--gold3)}
+.savrow{display:flex;gap:6px}
+.savrow input{
+  flex:1;
+  background:var(--bg);
+  border:1px solid var(--line);
+  color:var(--text);
+  font-family:var(--mono);
+  font-size:11px;
+  padding:7px 10px;
+}
+.savrow input:focus{outline:none;border-color:var(--gold)}
+.savrow button{
+  background:linear-gradient(135deg,var(--gold3),var(--gold));
+  color:var(--bg);
+  border:none;
+  font-family:var(--mono);
+  font-size:9px;
+  font-weight:700;
+  padding:7px 14px;
+  cursor:pointer;
+  letter-spacing:.12em;
+  white-space:nowrap;
+}
+.savrow button:hover{background:var(--goldLight)}
+
+/* ============ EDIT PANELS ============ */
+.ep{display:none;padding-top:12px;margin-top:10px;border-top:1px dashed var(--line)}
+.ep.open{display:block}
+.erow{display:flex;gap:5px;align-items:center;margin-bottom:5px}
+.erow input[type=text]{
+  flex:1;min-width:0;
+  background:var(--bg);border:1px solid var(--line);color:var(--text);
+  font-family:var(--body);font-size:11px;padding:5px 7px;
+}
+.erow input[type=number]{
+  width:58px;
+  background:var(--bg);border:1px solid var(--line);color:var(--gold);
+  font-family:var(--mono);font-size:11px;padding:5px 7px;text-align:right;
+}
+.erow select{
+  background:var(--bg);border:1px solid var(--line);color:var(--cyan);
+  font-family:var(--mono);font-size:10px;padding:4px;
+}
+.erow input:focus,.erow select:focus{outline:none;border-color:var(--gold3)}
+
+/* ============ CELEBRATION ============ */
+.cel{
+  position:fixed;
+  top:18px;
+  right:18px;
+  background:linear-gradient(135deg,var(--bg2),var(--bg3));
+  border:1px solid var(--teal);
+  padding:12px 18px;
+  max-width:340px;
+  opacity:0;
+  transform:translateX(20px);
+  transition:all .35s;
+  pointer-events:none;
+  z-index:999;
+  box-shadow:0 0 30px var(--tealGlow);
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+}
+.cel.show{opacity:1;transform:translateX(0)}
+.celt{
+  font-family:var(--mono);
+  font-size:8px;
+  letter-spacing:.25em;
+  color:var(--teal);
+  margin-bottom:3px;
+  font-weight:700;
+}
+.celm{font-size:13px;color:var(--text);font-weight:600}
+
+/* ============ MISC ============ */
+.div{height:1px;background:var(--line);margin:12px 0}
+.footer{
+  text-align:center;
+  font-family:var(--mono);
+  font-size:8px;
+  color:var(--faint);
+  margin-top:24px;
+  letter-spacing:.2em;
+}
+
+/* ============ PRIVACY OVERLAY ============ */
+.priv-toggle-btn{
+  font-family:var(--mono);
+  font-size:9px;
+  padding:4px 10px;
+  background:var(--bg);
+  border:1px solid var(--line2);
+  color:var(--cyan);
+  cursor:pointer;
+  letter-spacing:.12em;
+  margin-left:auto;
+}
+.priv-toggle-btn:hover{border-color:var(--gold);color:var(--gold)}
+.priv-toggle-btn.on{
+  background:var(--gold);
+  color:var(--bg);
+  border-color:var(--gold);
+}
+
+/* ============ SPOTIFY WIDGET ============ */
+.spotify-widget{
+  background:linear-gradient(135deg,var(--bg2),var(--bg3));
+  border:1px solid var(--line);
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  position:relative;
+  overflow:hidden;
+}
+.spotify-widget::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:1px;
+  background:linear-gradient(90deg,#1DB954,transparent);
+}
+.spotify-icon{
+  width:48px;
+  height:48px;
+  background:#1DB954;
+  border-radius:4px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  box-shadow:0 0 15px rgba(29,185,84,.4);
+}
+.spotify-icon svg{
+  width:28px;
+  height:28px;
+  fill:#000;
+}
+.spotify-info{flex:1;min-width:0}
+.spotify-track{
+  font-family:var(--body);
+  font-size:12px;
+  font-weight:600;
+  color:var(--text);
+  margin-bottom:2px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.spotify-artist{
+  font-family:var(--mono);
+  font-size:9px;
+  color:var(--dim);
+  letter-spacing:.04em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.spotify-btn{
+  font-family:var(--mono);
+  font-size:9px;
+  padding:5px 10px;
+  background:#1DB954;
+  color:#000;
+  border:none;
+  cursor:pointer;
+  letter-spacing:.1em;
+  font-weight:700;
+  border-radius:3px;
+  transition:all .15s;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.spotify-btn:hover{
+  background:#1ed760;
+  transform:scale(1.05);
+}
+.spotify-loading{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--dim);
+  text-align:center;
+  padding:20px;
+}
+
+/* ============ TERMINAL POLISH ============ */
+.card,.met,.btn,.quest-card,.prow,input,select,textarea,.inp,.inpsm,.tab,.spend-row,.status-pill,.nwr{border-radius:2px!important}
+.card{background:linear-gradient(180deg,var(--bg2),var(--bg3))!important}
+.ct::before{content:'> ';color:var(--gold);opacity:.7}
+input:focus,select:focus,textarea:focus{outline:1px solid var(--gold)!important;caret-color:var(--gold)}
+::selection{background:rgba(46,230,107,.3);color:#fff}
+::-webkit-scrollbar-thumb{background:var(--gold3)}
+.mv,.nwv,.spend-amt{font-variant-numeric:tabular-nums}
+.pstat.ld::after{content:'▋';margin-left:2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* Skills — extra bits */
+.sn-lvlbar{position:absolute;top:0;left:0;height:2px;transition:width .4s}
+.sn-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.04em;flex-wrap:wrap}
+.sn-fromq{color:var(--gold);opacity:.85}
+
+/* Quests — new controls */
+.quest-topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+.q-skill{font-size:8px;font-weight:800;letter-spacing:.08em;padding:2px 6px;border-radius:2px;margin-left:6px;vertical-align:middle}
+.s-wealth{background:rgba(46,230,107,.15);color:#2ee66b}
+.s-body{background:rgba(251,113,133,.15);color:#fb7185}
+.s-mind{background:rgba(168,139,250,.15);color:#a78bfa}
+.s-hustle{background:rgba(245,165,36,.15);color:#f5a524}
+.s-discipline{background:rgba(56,189,248,.15);color:#38bdf8}
+.q-xp{font-size:8px;font-weight:800;letter-spacing:.06em;color:var(--gold);margin-left:6px;vertical-align:middle}
+.qc-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.qc-actions{display:flex;gap:4px}
+.qmini{background:transparent;border:1px solid var(--line2);color:var(--dim);width:26px;height:26px;border-radius:2px;cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
+.qmini:hover{border-color:var(--gold);color:var(--gold)}
+.qmini.danger:hover{border-color:var(--red);color:var(--red)}
+.q-steps{margin-top:8px;display:flex;flex-direction:column;gap:3px}
+.q-step{display:flex;align-items:center;gap:7px;cursor:pointer;padding:3px 0;font-size:11px;color:var(--dim)}
+.q-step:hover{color:var(--text)}
+.q-step-box{width:16px;height:16px;border:1px solid var(--line3);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gold);flex-shrink:0}
+.q-step.done .q-step-box{background:var(--goldDim);border-color:var(--gold)}
+.q-step.done .q-step-t{text-decoration:line-through;color:var(--faint)}
+.quest-editor{display:none}
+.quest-editor.open{display:block;background:var(--bg2);border:1px solid var(--gold3);border-radius:3px;padding:14px;margin-bottom:12px}
+.qe-title{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--gold);margin-bottom:10px}
+.quest-editor .inp{width:100%;margin-bottom:8px}
+.qe-row{display:flex;gap:8px}
+.qe-row .inp{flex:1}
+.qe-steps{min-height:64px;resize:vertical;font-family:var(--mono);font-size:11px}
+.qe-actions{display:flex;gap:6px;margin-top:2px}
+@media(max-width:760px){
+  .qe-row{flex-direction:column;gap:0}
+  .quest-topbar{gap:8px}
+  .quest-topbar .btn{width:100%}
+  .qc-row{grid-template-columns:38px 1fr auto!important;gap:9px!important}
+  .qc-name{font-size:13px;word-break:break-word}
+  .q-skill,.q-xp{display:inline-block;margin-top:2px}
+}
+
+/* Portfolio P&L strip */
+.pnl-strip{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:2px;margin-bottom:12px;overflow:hidden}
+.pnl-cell{background:var(--bg2);padding:11px 13px}
+.pnl-cell .pl{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--dim);margin-bottom:3px}
+.pnl-cell .pv{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.pnl-cell .ps{font-family:var(--mono);font-size:9px;margin-top:2px}
+.pnl-strip.empty{grid-template-columns:1fr}
+.pnl-note{background:var(--bg2);padding:11px 13px;font-family:var(--mono);font-size:10px;color:var(--dim);line-height:1.5}
+@media(max-width:760px){.pnl-strip{grid-template-columns:1fr 1fr}.pnl-cell:first-child{grid-column:1/-1}.pnl-cell .pv{font-size:18px}}
+
+/* Net worth hero (Robinhood-style) */
+.nw-hero{position:relative;min-height:56px;margin-bottom:6px}
+.nw-big{font-size:34px;font-weight:800;color:var(--text);letter-spacing:-.01em;line-height:1;font-variant-numeric:tabular-nums}
+.nw-chg{font-size:12px;font-weight:700;margin-top:5px;font-variant-numeric:tabular-nums}
+.nw-chg .lbl{color:var(--faint);font-weight:500;margin-left:6px}
+.nw-scrub{position:absolute;top:0;right:0;text-align:right;font-size:10px;color:var(--dim);pointer-events:none;opacity:0;transition:opacity .12s}
+.nw-scrub.on{opacity:1}
+.nw-scrub b{display:block;color:var(--text);font-size:15px;font-weight:800}
+.trend-wrap{position:relative}
+.range-row{margin-top:10px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.rbtn{background:transparent;border:1px solid var(--line2);color:var(--dim);font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;padding:5px 11px;border-radius:2px;cursor:pointer;min-height:32px;transition:all .15s}
+.rbtn:hover{border-color:var(--gold3);color:var(--text)}
+.rbtn.on{background:var(--goldDim);border-color:var(--gold);color:var(--gold)}
+@media(max-width:760px){.nw-big{font-size:30px}.rbtn{padding:6px 12px}}
+
+/* ============ MOBILE / PHONE ============ */
+@media(max-width:760px){
+  html,body{font-size:13px}
+  .wrap{padding:10px 12px 80px}
+  .g2,.g3,.g4,.hero{grid-template-columns:1fr!important;gap:10px!important}
+  .tabs{overflow-x:auto;flex-wrap:nowrap!important;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:4px;padding-bottom:4px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto!important;white-space:nowrap;padding:9px 12px!important;font-size:11px!important;min-height:40px}
+  .topbar{flex-wrap:wrap;gap:8px;row-gap:6px}
+  .pos-header,.prow{grid-template-columns:1.4fr .8fr .9fr 1fr .8fr!important;font-size:10px!important;gap:4px!important}
+  .psym{font-size:11px!important}
+  .psub{font-size:8px!important}
+  .met{padding:10px!important}
+  .mv{font-size:20px!important}
+  .nwgrid{grid-template-columns:1fr!important}
+  .chk{width:26px!important;height:26px!important}
+  .btn{min-height:38px;padding:8px 12px}
+  .trow{padding:9px 0!important}
+  canvas.trend-canvas{height:180px!important}
+  .qc-icon{width:42px!important;height:42px!important}
+  .erow{flex-wrap:wrap}
+}
+@media(max-width:420px){
+  .pos-header,.prow{grid-template-columns:1.3fr .7fr .8fr 1fr .8fr!important;font-size:9px!important}
+  .mv{font-size:18px!important}
+  .tab{font-size:10px!important;padding:8px 10px!important}
+}
+@supports(padding:max(0px)){
+  .wrap{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="wrap">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">LIFE.OS<sub>// v5 TERMINAL</sub></div>
+  <div class="topr">
+    <span class="pstat ld" id="pstat">> LOADING...</span>
+    <button class="btn btn-sm" onclick="fetchPrices()">↻ SYNC</button>
+    <button class="priv-toggle-btn" id="privBtn" onclick="togglePrivacy()">◉ PRIV</button>
+    <div class="clk"><span id="clk"></span><span class="dot"></span></div>
+  </div>
+</div>
+
+<!-- PLAYER STRIP WITH EVOLVING ICON -->
+<div class="player">
+  <div class="levelbox">
+    <div class="lvIcon">
+      <div class="lvLiquid" id="lvLiquid" style="height:0%"></div>
+      <svg id="lvIconSvg" viewBox="0 0 100 100"></svg>
+    </div>
+    <div class="lvInfo">
+      <div class="lvNum" id="lvn">1</div>
+      <div class="lvLabel">LEVEL</div>
+      <div class="lvRank" id="lvRank">SEEDLING</div>
+    </div>
+  </div>
+  <div class="pmid">
+    <div class="xpr"><span><strong id="xpc">0</strong> XP</span><span id="xpt">/ 100 NEXT TIER</span></div>
+    <div class="xptrack"><div class="xpfill" id="xpf" style="width:0%"></div></div>
+  </div>
+  <div class="pright">
+    <div class="streak"><div class="strkn" id="strkn">0</div><div class="strkl">STREAK</div></div>
+  </div>
+</div>
+
+<!-- MORNING BRIEFING -->
+<div class="briefing">
+  <div class="briefIcon">⚠</div>
+  <div class="briefTxt" id="briefTxt">> SCANNING DATA...</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab on" onclick="ST('today',event)">▸ TODAY</button>
+  <button class="tab" onclick="ST('finance',event)">▸ FINANCES</button>
+  <button class="tab" onclick="ST('spend',event)">▸ SPENDING</button>
+  <button class="tab" onclick="ST('body',event)">▸ BODY</button>
+  <button class="tab" onclick="ST('quests',event)">▸ QUESTS</button>
+  <button class="tab" onclick="ST('skills',event)">▸ SKILLS</button>
+  <button class="tab" onclick="ST('log',event)">▸ LOG</button>
+  <button class="tab" onclick="ST('settings',event)">▸ ⚙</button>
+</div>
+
+<!-- ============ TODAY ============ -->
+<div id="pane-today" class="pane on">
+  <div class="hero">
+    <!-- NET WORTH (BIGGER, CLICK TO HIDE) -->
+    <div class="card nwglow">
+      <div class="ch"><div class="ct">NET WORTH</div><div class="ctag">LIVE</div></div>
+      <div class="cb">
+        <div class="nwamt" id="nwAmt" onclick="togglePrivacy()" title="Click to hide all numbers"><span class="cur">$</span><span id="nwv">0</span></div>
+        <div class="privNote">CLICK NUMBER TO HIDE / SHOW</div>
+        <div class="nwgrid" id="nwrows"></div>
+      </div>
+    </div>
+
+    <!-- MIDDLE COLUMN: DUPLEX (SHORT) + SPOTIFY -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <!-- DUPLEX FUND (SHORTENED) -->
+      <div class="card">
+        <div class="ch"><div class="ct">DUPLEX FUND</div><div class="ctag" id="dptag">$0 / $50K</div></div>
+        <div class="cb">
+          <div style="font-family:var(--display);font-weight:900;font-size:28px;color:var(--gold);text-shadow:0 0 20px var(--goldGlow);margin-bottom:4px;letter-spacing:.02em" id="dpAmt">$<span id="dpc">0</span></div>
+          <div class="dbt"><div class="dbf" id="dpbar" style="width:0%"></div></div>
+          <div class="dpr" style="font-size:10px"><span id="dppct">0%</span><span id="dprem">$50,000 to go</span></div>
+          <div class="deta" id="dpeta" style="font-size:9px">> ETA: calculating...</div>
+          <div style="margin-top:6px;display:flex;gap:4px" class="savrow">
+            <input type="number" id="savinp" placeholder="add $..." min="0" step="1" style="font-size:11px">
+            <button onclick="addSav()" style="font-size:8px;padding:5px 8px">+ SAVE</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SPOTIFY NOW PLAYING -->
+      <div class="card">
+        <div class="ch"><div class="ct">NOW PLAYING</div><div style="font-family:var(--mono);font-size:8px;color:var(--teal);letter-spacing:.08em">SPOTIFY</div></div>
+        <div class="cb" style="padding:0">
+          <div id="spotifyWidget" class="spotify-loading">Loading Spotify...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TODAY TASKS -->
+    <div class="card">
+      <div class="ch"><div class="ct">TODAY</div><div class="ctag" id="tddate">--</div></div>
+      <div class="cb">
+        <div class="tprog">
+          <div class="tpct" id="tdpct">0%</div>
+          <div class="tinfo">
+            <div class="tlbl"><span id="tdcore">0/7 CORE</span><span style="float:right" id="tdxp">+0 XP</span></div>
+            <div style="height:4px;background:var(--bg);border:1px solid var(--line);overflow:hidden">
+              <div style="height:100%;background:linear-gradient(90deg,var(--gold3),var(--gold));transition:width .4s;box-shadow:0 0 6px var(--goldGlow)" id="tdbar"></div>
+            </div>
+          </div>
+        </div>
+        <div class="tlw" id="tasklist"></div>
+        <div class="wkly" id="wklysect"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="card">
+        <div class="ch"><div class="ct">THIS WEEK</div></div>
+        <div class="cb">
+          <div class="wkcal" id="wkcal"></div>
+          <div style="margin-top:10px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:.1em">
+            <span>WEEK XP</span><span style="color:var(--gold);font-weight:700" id="wkxp">0</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">JOURNAL — TODAY</div><button class="btn btn-sm" onclick="saveJ()">SAVE</button></div>
+        <div class="cb">
+          <textarea class="journal" id="jtxt" placeholder="Thoughts, intentions, wins, anything on your mind..."></textarea>
+          <div style="margin-top:5px;font-family:var(--mono);font-size:8px;color:var(--cyan);letter-spacing:.1em" id="jsaved"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">ACTIVE QUESTS</div></div>
+      <div class="cb" id="ovquests"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FINANCES ============ -->
+<div id="pane-finance" class="pane">
+  <div class="pnl-strip" id="pnlStrip"></div>
+  <div class="g4" id="finmets" style="margin-bottom:12px"></div>
+
+  <div class="card">
+    <div class="ch"><div class="ct">NET WORTH</div><div class="ctag" id="trendcount">0 MONTHS</div></div>
+    <div class="cb">
+      <!-- Robinhood-style hero: big number + period change -->
+      <div class="nw-hero">
+        <div class="nw-big" id="nwHeroNum">$0</div>
+        <div class="nw-chg" id="nwHeroChg"></div>
+        <div class="nw-scrub" id="nwScrub"></div>
+      </div>
+      <div class="trend-wrap">
+        <canvas id="trendchart" class="trend-canvas"></canvas>
+      </div>
+      <div class="range-row" id="rangeRow">
+        <button class="rbtn" data-r="3" onclick="setRange(3)">3M</button>
+        <button class="rbtn" data-r="6" onclick="setRange(6)">6M</button>
+        <button class="rbtn" data-r="12" onclick="setRange(12)">1Y</button>
+        <button class="rbtn on" data-r="0" onclick="setRange(0)">ALL</button>
+        <button class="btn btn-sm" style="margin-left:auto" onclick="snapNW()">📸 SNAPSHOT</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="ct">NET WORTH BY ACCOUNT</div></div>
+    <div class="cb">
+      <div class="piewrap">
+        <canvas id="pieacct" width="180" height="180"></canvas>
+        <div class="leg" id="legacct"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ct">ALL POSITIONS — LIVE</div>
+      <button class="btn btn-sm" onclick="fetchPrices()">↻ REFRESH</button>
+    </div>
+    <div class="cb" id="allpos"></div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="ct">UPDATE BALANCES</div><button class="btn btn-sm" onclick="tAE()">EDIT</button></div>
+    <div class="cb ep" id="acctep">
+      <div id="acctrows"></div>
+      <div style="display:flex;gap:5px;margin-top:8px">
+        <button class="btn btn-g btn-sm" onclick="saveAccts()">SAVE</button>
+        <button class="btn btn-sm" onclick="tAE()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="ct">EDIT POSITIONS</div><button class="btn btn-sm" onclick="tPE()">EDIT</button></div>
+    <div class="cb ep" id="posep">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--cyan);margin-bottom:10px;letter-spacing:.08em">ACCOUNT / SYMBOL / SHARES / AVG COST</div>
+      <div id="posrows" style="max-height:400px;overflow-y:auto;padding-right:4px"></div>
+      <div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="addPos()">+ ADD</button>
+        <button class="btn btn-g btn-sm" onclick="savePositions()">SAVE</button>
+        <button class="btn btn-sm" onclick="tPE()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SPENDING ============ -->
+<div id="pane-spend" class="pane">
+  <div class="g4" style="margin-bottom:12px">
+    <div class="met"><div class="ml">SPENT THIS WEEK</div><div class="mv" style="color:var(--red)" id="spend-week">$0</div><div class="ms" id="spend-week-sub">last 7 days</div></div>
+    <div class="met"><div class="ml">SPENT THIS MONTH</div><div class="mv" style="color:var(--red)" id="spend-month">$0</div><div class="ms" id="spend-month-sub">this month</div></div>
+    <div class="met"><div class="ml">AVG / DAY</div><div class="mv" style="color:var(--gold)" id="spend-avg">$0</div><div class="ms">this month</div></div>
+    <div class="met"><div class="ml">LEFT TO INVEST</div><div class="mv" style="color:var(--teal)" id="spend-invest">—</div><div class="ms" id="spend-invest-sub">set income below</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="ct">LOG SPENDING</div><div class="ctag" id="spend-today-tag">$0 today</div></div>
+    <div class="cb">
+      <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+        <input class="inp" type="number" id="spend-amt" placeholder="$" style="width:80px;font-family:var(--mono);font-size:13px" min="0" step="0.01">
+        <input class="inp" type="text" id="spend-desc" placeholder="what for?" style="flex:1;min-width:120px">
+        <select class="inp" id="spend-cat" style="width:105px;font-family:var(--mono);font-size:11px">
+          <option>Food</option><option>Eating out</option><option>Gas</option><option>Bills</option><option>Subscriptions</option><option>Fun</option><option>Shopping</option><option>Card interest</option><option>Gym</option><option>Other</option>
+        </select>
+        <select class="inp" id="spend-nw" style="width:78px;font-family:var(--mono);font-size:11px">
+          <option value="want">Want</option><option value="need">Need</option>
+        </select>
+        <button class="btn btn-g btn-sm" onclick="addSpend()">+ LOG IT</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--dim);flex-wrap:wrap">
+        <span style="letter-spacing:.05em">MONTHLY TAKE-HOME $</span>
+        <input class="inpsm" type="number" id="income-inp" style="width:110px" min="0" step="50">
+        <button class="btn btn-sm" onclick="saveIncome()">SET</button>
+        <span id="income-note" style="color:var(--faint)"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="ct">WHERE IT'S LEAKING</div><div class="ctag">this month · wants only</div></div>
+    <div class="cb" id="spend-leaks"></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><div class="ct">BY CATEGORY (THIS MONTH)</div><div class="ctag" id="spend-nw-split">—</div></div>
+      <div class="cb" id="spend-by-cat"></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">RECENT (LAST 20)</div></div>
+      <div class="cb" id="spend-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ BODY ============ -->
+<div id="pane-body" class="pane">
+  <div class="g3" style="margin-bottom:12px">
+    <div class="body-stat"><div class="body-big" style="color:var(--teal);text-shadow:0 0 15px var(--tealGlow)" id="dslDisl">0</div><div class="body-lbl">DAYS SINCE DISLOCATION</div></div>
+    <div class="body-stat"><div class="body-big" style="color:var(--gold);text-shadow:0 0 15px var(--goldGlow)" id="rehabPct">0%</div><div class="body-lbl">REHAB (LAST 30D)</div></div>
+    <div class="body-stat"><div class="body-big" style="color:var(--cyan);text-shadow:0 0 15px var(--cyanGlow)" id="gymPct">0%</div><div class="body-lbl">GYM (LAST 30D)</div></div>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="card">
+        <div class="ch"><div class="ct">SHOULDER STATUS</div></div>
+        <div class="cb">
+          <div style="margin-bottom:12px">
+            <div class="ml">HUSKY HEALTH</div>
+            <div id="huskyStatus" style="margin-top:5px"></div>
+            <div style="margin-top:6px;display:flex;gap:5px">
+              <button class="btn btn-sm" onclick="setBodyStatus('husky','not_started')">NOT STARTED</button>
+              <button class="btn btn-sm" onclick="setBodyStatus('husky','applied')">APPLIED</button>
+              <button class="btn btn-sm" onclick="setBodyStatus('husky','approved')">APPROVED</button>
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div class="ml">MRI STATUS</div>
+            <div id="mriStatus" style="margin-top:5px"></div>
+            <div style="margin-top:6px;display:flex;gap:5px">
+              <button class="btn btn-sm" onclick="setBodyStatus('mri','not_scheduled')">NOT SCHED</button>
+              <button class="btn btn-sm" onclick="setBodyStatus('mri','scheduled')">SCHEDULED</button>
+              <button class="btn btn-sm" onclick="setBodyStatus('mri','completed')">DONE</button>
+            </div>
+          </div>
+          <div>
+            <div class="ml">SURGERY DECISION</div>
+            <div id="surgeryStatus" style="margin-top:5px"></div>
+            <div style="margin-top:6px;display:flex;gap:5px">
+              <button class="btn btn-sm" onclick="setBodyStatus('surgery','not_needed')">NOT NEEDED</button>
+              <button class="btn btn-sm" onclick="setBodyStatus('surgery','considering')">CONSIDERING</button>
+              <button class="btn btn-sm" onclick="setBodyStatus('surgery','scheduled')">SCHEDULED</button>
+              <button class="btn btn-sm" onclick="setBodyStatus('surgery','done')">DONE</button>
+            </div>
+          </div>
+          <div class="div"></div>
+          <div class="ml">LAST DISLOCATION DATE</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:6px">
+            <input class="inp" type="date" id="lastDislDate" style="width:160px;font-family:var(--mono);font-size:12px">
+            <button class="btn btn-sm" onclick="saveDislDate()">SET</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><div class="ct">RANGE OF MOTION (1-10)</div><button class="btn btn-sm" onclick="saveROM()">SAVE</button></div>
+        <div class="cb" id="romSection"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="ch"><div class="ct">SLEEP TRACKER</div></div>
+        <div class="cb">
+          <div class="ml">IN BED BY 10:30 LAST NIGHT?</div>
+          <div style="display:flex;gap:8px;margin-top:8px;margin-bottom:14px">
+            <button class="btn btn-sm" id="sleepY" onclick="logSleep(true)" style="flex:1">✓ YES</button>
+            <button class="btn btn-sm" id="sleepN" onclick="logSleep(false)" style="flex:1">✗ NO</button>
+          </div>
+          <div class="ml">LAST 14 NIGHTS</div>
+          <div id="sleepHistory" style="margin-top:8px;font-family:var(--mono)"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><div class="ct">STREAKS</div></div>
+        <div class="cb">
+          <div class="ml">GYM STREAK</div>
+          <div style="font-family:var(--display);font-size:28px;font-weight:900;color:var(--cyan);margin-bottom:10px;text-shadow:0 0 12px var(--cyanGlow)" id="gymStreak">0 DAYS</div>
+          <div class="ml">REHAB STREAK</div>
+          <div style="font-family:var(--display);font-size:28px;font-weight:900;color:var(--gold);margin-bottom:10px;text-shadow:0 0 12px var(--goldGlow)" id="rehabStreak">0 DAYS</div>
+          <div class="ml" style="margin-top:8px">CONSISTENCY (30D)</div>
+          <div class="bt" style="height:8px;margin-top:6px"><div class="bf" id="gymBar" style="width:0%;background:linear-gradient(90deg,var(--cyan),var(--teal))"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ QUESTS ============ -->
+<div id="pane-quests" class="pane">
+  <div class="quest-topbar">
+    <div class="quest-priority-bar">
+      <span style="margin-right:8px;color:var(--cyan)">FILTER:</span>
+      <span class="qpb-item active" onclick="filterQuests('all',event)">ALL</span>
+      <span class="qpb-item" onclick="filterQuests('urgent',event)">URGENT</span>
+      <span class="qpb-item" onclick="filterQuests('main',event)">MAIN</span>
+      <span class="qpb-item" onclick="filterQuests('side',event)">SIDE</span>
+      <span class="qpb-item" onclick="filterQuests('life',event)">LIFE</span>
+      <span class="qpb-item" onclick="filterQuests('done',event)">DONE</span>
+    </div>
+    <button class="btn btn-g btn-sm" onclick="openQuestEditor('new')">+ NEW QUEST</button>
+  </div>
+  <div class="quest-editor" id="quest-editor"></div>
+  <div id="quest-list"></div>
+</div>
+
+<!-- ============ SKILLS ============ -->
+<div id="pane-skills" class="pane">
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><div class="ct">SKILL TREE</div></div>
+      <div class="cb" id="sklist"></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">ACHIEVEMENTS</div></div>
+      <div class="cb" id="achlist"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LOG (with journal navigation) ============ -->
+<div id="pane-log" class="pane">
+  <div class="g2">
+    <div class="card">
+      <div class="ch">
+        <div class="ct">MONTH HEATMAP</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button class="jnav-btn" onclick="navMonth(-12)" title="Previous year">⟪</button>
+          <button class="jnav-btn" onclick="navMonth(-1)" title="Previous month">←</button>
+          <div class="ctag" id="molbl" style="min-width:70px;text-align:center">--</div>
+          <button class="jnav-btn" onclick="navMonth(1)" title="Next month">→</button>
+          <button class="jnav-btn" onclick="navMonth(12)" title="Next year">⟫</button>
+          <button class="jnav-btn" onclick="navMonthToday()" title="Back to today">TODAY</button>
+        </div>
+      </div>
+      <div class="cb">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-family:var(--mono);font-size:8px;color:var(--cyan);text-align:center;margin-bottom:4px;letter-spacing:.1em"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+        <div class="mogrid" id="mogrid"></div>
+        <div style="margin-top:10px">
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--cyan);margin-bottom:4px;letter-spacing:.05em"><span>MONTHLY XP</span><span id="moxplbl" style="color:var(--gold)">0/1500</span></div>
+          <div class="bt" style="height:6px"><div class="bf" id="mobar" style="width:0%;background:linear-gradient(90deg,var(--gold3),var(--gold))"></div></div>
+        </div>
+        <div class="div"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-family:var(--mono);font-size:8px;color:var(--cyan)">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:rgba(0,224,144,.3);border:1px solid var(--teal)"></span> 100%</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:rgba(212,167,60,.2);border:1px solid var(--gold3)"></span> Partial</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:rgba(255,48,96,.15);border:1px solid var(--red)"></span> Missed</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;background:var(--cyan);border-radius:50%"></span> Has journal</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--cyan);margin-top:8px;text-align:center;letter-spacing:.08em">> CLICK ANY DAY TO VIEW JOURNAL ENTRY</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">JOURNAL VIEWER</div>
+        <div class="journal-nav">
+          <button class="jnav-btn" onclick="navJournal(-1)">← PREV</button>
+          <button class="jnav-btn" onclick="navJournalToday()">TODAY</button>
+          <button class="jnav-btn" onclick="navJournal(1)">NEXT →</button>
+        </div>
+      </div>
+      <div class="cb">
+        <div class="journal-date-header">
+          <span id="jvDate">SELECT A DAY</span>
+          <span id="jvStatus" style="color:var(--gold)"></span>
+        </div>
+        <div class="journal-viewer" id="journalViewer">
+          <div class="journal-empty">Click any day on the heatmap to read the journal entry from that day.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS ============ -->
+<div id="pane-settings" class="pane">
+  <div class="g2">
+    <div>
+      <div class="card">
+        <div class="ch"><div class="ct">FINNHUB API KEY</div></div>
+        <div class="cb">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);margin-bottom:8px;line-height:1.7;letter-spacing:.04em">
+            Enter your free API key from <strong style="color:var(--gold)">finnhub.io</strong> to enable live prices.
+          </div>
+          <div style="display:flex;gap:6px">
+            <input class="inp" type="text" id="apiKeyInp" placeholder="paste Finnhub key..." style="font-family:var(--mono);font-size:11px">
+            <button class="btn btn-g btn-sm" onclick="saveApiKey()">SAVE KEY</button>
+          </div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--cyan);margin-top:6px;letter-spacing:.05em" id="apiKeyStatus"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><div class="ct">EDIT HABITS</div><button class="btn btn-sm" onclick="tHE()">EDIT</button></div>
+        <div class="cb ep" id="habitep">
+          <div id="habitrows"></div>
+          <div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
+            <button class="btn btn-sm" onclick="addHabit()">+ ADD</button>
+            <button class="btn btn-g btn-sm" onclick="saveHabits()">SAVE</button>
+            <button class="btn btn-sm" onclick="tHE()">CANCEL</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><div class="ct">GOOGLE SHEET SYNC</div><div class="ctag" id="sheetStatus">NOT CONNECTED</div></div>
+      <div class="cb">
+        <div style="font-family:var(--body);font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:10px">
+          In your net-worth sheet: <strong style="color:var(--gold)">File → Share → Publish to web → pick your summary tab → Comma-separated values (.csv)</strong>. Copy that link, paste it below. Net worth then pulls from the sheet every time you open LIFE.OS.
+        </div>
+        <div style="display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap">
+          <input class="inp" type="text" id="sheetUrlInp" placeholder="paste published CSV link..." style="flex:1;min-width:180px;font-family:var(--mono);font-size:10px">
+          <button class="btn btn-g btn-sm" onclick="saveSheetUrl()">SAVE + SYNC</button>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">
+          <button class="btn btn-sm" onclick="syncSheetFromUrl(false)">↻ SYNC NOW</button>
+          <button class="btn btn-r btn-sm" onclick="disconnectSheet()">DISCONNECT</button>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--faint);letter-spacing:.04em;margin-bottom:8px;line-height:1.6">
+          SHEET FORMAT: one row per account — <strong style="color:var(--cyan)">name in one column, dollar amount in the next</strong>. e.g. <em>Checking, 1200</em> · <em>Roth IRA, 2400</em> · <em>Bitcoin, 1100</em>. Rows labeled "total" are skipped. Names with brokerage / roth / ira / dividend / etf count toward INVESTED; a row named "duplex" or "down payment" fills the duplex bar.
+        </div>
+        <div class="div"></div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:.05em;margin-bottom:6px">PASTE-SYNC — backup, always works</div>
+        <div style="font-family:var(--body);font-size:10px;color:var(--dim);margin-bottom:6px">Select your summary rows in the sheet, copy, paste here, sync. Nothing goes public.</div>
+        <textarea id="sheetPasteInp" placeholder="paste rows: name [tab or comma] amount" style="width:100%;min-height:66px;background:var(--bg);color:var(--text);border:1px solid var(--line);font-family:var(--mono);font-size:10px;padding:6px;box-sizing:border-box"></textarea>
+        <button class="btn btn-g btn-sm" onclick="pasteSyncSheet()" style="margin-top:6px">SYNC FROM PASTE</button>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:8px;line-height:1.6">PRIVACY: "Publish to web" makes that one tab readable by anyone with the link — publish a summary tab only, never a tab with account numbers. Paste-sync exposes nothing.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><div class="ct">DATA</div></div>
+      <div class="cb">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);line-height:1.8;margin-bottom:14px;letter-spacing:.04em">
+          Data saved locally in this browser.<br>
+          Storage key: <strong style="color:var(--gold)">life_os_v4</strong><br>
+          Export backup regularly.
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-g btn-sm" onclick="exportData()">↓ EXPORT</button>
+          <button class="btn btn-sm" onclick="document.getElementById('impfile').click()">↑ IMPORT</button>
+          <button class="btn btn-r btn-sm" onclick="resetData()">⟲ RESET ALL</button>
+          <input type="file" id="impfile" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+        <div class="div"></div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--faint);line-height:1.7">
+          PRIVACY: Click net worth or PRIV button to hide all numbers.<br>
+          DATA NEVER LEAVES YOUR BROWSER except stock symbol prices to Finnhub.<br>
+          Anthropic / Finnhub do not see what you save here.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">▓ LIFE.OS v5 // TERMINAL ▓ BUILT FOR THE GRIND ▓</div>
+</div>
+
+<div class="cel" id="cel"><div class="celt" id="celt">—</div><div class="celm" id="celm"></div></div>
+
+<script>
+// ============ LIFE.OS v4 — CYBERPUNK ROYAL ============
+const SK='life_os_v4';
+
+// CRITICAL: Always recompute today's date at function call time, not on file load
+function getToday(){return new Date();}
+function getTS(){return new Date().toISOString().split('T')[0];}
+
+// Terminal categorical palette — validated for adjacent-slice separation (ΔE ~17) and contrast on black.
+const PC=['#2ee66b','#38bdf8','#f5a524','#e879f9','#fb7185','#a78bfa','#22d3ee','#fb923c','#84cc16','#f472b6','#2dd4bf','#c084fc'];
+
+// ============ MOTIVATIONAL MESSAGES ============
+const MOTIVS=[
+"The duplex doesn't buy itself. Every dollar you save is a brick in the foundation.",
+"Shoulder first. You can't grind with a broken body. Do the rehab.",
+"You didn't come this far to only come this far. Keep stacking.",
+"God didn't bring you through three dislocations to watch you quit now.",
+"Puerto Rico is around the corner. Keep the shoulder right or pay the price.",
+"$500 this week. That's the number. Hit it or explain to yourself why you didn't.",
+"HVAC is the pivot that saves your body and builds your future. Trust it.",
+"Financial freedom isn't a wish — it's $500 a week for 100 weeks. Math doesn't lie.",
+"Every rep of rehab is an investment in not having surgery. Do the work.",
+"Your future self is counting on what you do today. Don't let him down.",
+"The dad conversation isn't going to have itself. Man up and have it with love.",
+"Small daily wins compound. One year of this and you won't recognize your life.",
+"The duplex is not a dream. It's a savings account and a deadline.",
+"Discipline is choosing between what you want now and what you want most.",
+"The gym is your anchor. When everything else falls apart, the gym holds.",
+];
+
+// ============ 80-LEVEL SYSTEM ============
+// Tier 1 (1-10): SEEDLING - bonsai
+// Tier 2 (11-20): COIN BEARER - coin pouch
+// Tier 3 (21-30): CASH HANDLER - cash stack
+// Tier 4 (31-40): FRANKLIN - $100 bill
+// Tier 5 (41-50): WAD CARRIER - wad of cash
+// Tier 6 (51-60): GT3 RS - Porsche
+// Tier 7 (61-70): GOLD INGOT - bar of gold
+// Tier 8 (71-80): DIAMOND - the apex
+const TIER_NAMES=['SEEDLING','COIN BEARER','CASH HANDLER','FRANKLIN','WAD CARRIER','GT3 RS','INGOT','DIAMOND'];
+function getTier(level){return Math.min(7,Math.floor((level-1)/10));}
+function getTierName(level){return TIER_NAMES[getTier(level)];}
+
+// XP curve: each level requires more XP. Designed to take ~5 years of consistent grinding to hit 80.
+function xpForLevel(level){
+  // L1 starts at 0. L2 needs 100. Then exponential growth.
+  if(level<=1)return 0;
+  // Each level: base * (1.08^(level-1))
+  return Math.floor(100*(Math.pow(1.10,level-1)-1)/0.10);
+}
+
+function getLevel(totalXP){
+  for(let lv=1;lv<=80;lv++){
+    if(totalXP<xpForLevel(lv+1))return lv;
+  }
+  return 80;
+}
+
+function getLevelInfo(totalXP){
+  const lv=getLevel(totalXP);
+  const curThreshold=xpForLevel(lv);
+  const nextThreshold=xpForLevel(lv+1);
+  const range=nextThreshold-curThreshold;
+  const progress=totalXP-curThreshold;
+  const pct=range>0?Math.round(progress/range*100):100;
+  return{level:lv,tier:getTier(lv),tierName:getTierName(lv),pct:Math.min(100,pct),xpInLevel:progress,xpToNext:range,curThreshold,nextThreshold};
+}
+
+// ============ SVG ICONS — 8 EVOLUTION TIERS ============
+// All in gold-line style. Filled by a green liquid layer behind them.
+const TIER_ICONS=[
+  // 0: Bonsai tree (seed of wealth)
+  `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M50 85 L50 65" stroke-width="3"/>
+    <path d="M50 65 Q40 55 30 50" stroke-width="2.5"/>
+    <path d="M50 65 Q60 55 70 50" stroke-width="2.5"/>
+    <path d="M50 65 Q50 50 50 35"/>
+    <ellipse cx="30" cy="42" rx="12" ry="10"/>
+    <ellipse cx="70" cy="42" rx="12" ry="10"/>
+    <ellipse cx="50" cy="28" rx="14" ry="11"/>
+    <rect x="35" y="85" width="30" height="6" rx="1"/>
+    <line x1="40" y1="40" x2="42" y2="44"/>
+    <line x1="58" y1="40" x2="60" y2="44"/>
+    <line x1="48" y1="26" x2="50" y2="30"/>
+  </svg>`,
+  // 1: Coin pouch (first earnings)
+  `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M30 35 L70 35 L75 45 L78 70 Q78 85 65 88 L35 88 Q22 85 22 70 L25 45 Z" stroke-width="2.5"/>
+    <path d="M35 35 Q35 25 50 25 Q65 25 65 35"/>
+    <line x1="40" y1="30" x2="60" y2="30"/>
+    <circle cx="50" cy="62" r="9"/>
+    <text x="50" y="67" font-family="Orbitron" font-size="11" font-weight="900" text-anchor="middle" fill="currentColor" stroke="none">$</text>
+  </svg>`,
+  // 2: Cash stack
+  `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="15" y="55" width="70" height="22" rx="2" stroke-width="2.5"/>
+    <rect x="20" y="48" width="60" height="6" rx="1"/>
+    <rect x="25" y="42" width="50" height="5" rx="1"/>
+    <circle cx="50" cy="66" r="6"/>
+    <text x="50" y="70" font-family="Orbitron" font-size="9" font-weight="900" text-anchor="middle" fill="currentColor" stroke="none">$</text>
+    <rect x="20" y="60" width="6" height="2"/>
+    <rect x="74" y="60" width="6" height="2"/>
+  </svg>`,
+  // 3: $100 bill
+  `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="12" y="32" width="76" height="40" rx="2" stroke-width="2.5"/>
+    <circle cx="50" cy="52" r="11"/>
+    <text x="50" y="56" font-family="Orbitron" font-size="10" font-weight="900" text-anchor="middle" fill="currentColor" stroke="none">100</text>
+    <text x="22" y="42" font-family="Orbitron" font-size="7" font-weight="900" fill="currentColor" stroke="none">100</text>
+    <text x="71" y="68" font-family="Orbitron" font-size="7" font-weight="900" fill="currentColor" stroke="none">100</text>
+    <line x1="20" y1="62" x2="30" y2="62"/>
+    <line x1="70" y1="42" x2="80" y2="42"/>
+  </svg>`,
+  // 4: Wad of cash
+  `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="14" y="56" width="72" height="22" rx="3" stroke-width="2.5"/>
+    <rect x="18" y="48" width="64" height="22" rx="2"/>
+    <rect x="22" y="40" width="56" height="22" rx="2"/>
+    <rect x="26" y="32" width="48" height="22" rx="2"/>
+    <circle cx="50" cy="42" r="7"/>
+    <text x="50" y="46" font-family="Orbitron" font-size="8" font-weight="900" text-anchor="middle" fill="currentColor" stroke="none">$</text>
+  </svg>`,
+  // 5: Porsche 911 GT3 RS (silhouette)
+  `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 65 L20 55 Q25 45 40 42 L55 38 Q70 36 80 42 L90 50 L92 65 L85 70 L78 70 L75 65 L25 65 L22 70 L15 70 Z" stroke-width="2.5"/>
+    <circle cx="28" cy="68" r="6" stroke-width="2.5" fill="currentColor"/>
+    <circle cx="72" cy="68" r="6" stroke-width="2.5" fill="currentColor"/>
+    <path d="M30 55 L48 45 L62 45 L75 55"/>
+    <path d="M82 50 L88 48 L88 55"/>
+    <line x1="40" y1="65" x2="60" y2="65" stroke-width="1.5"/>
+    <path d="M70 35 L75 30 L80 35 L80 42" stroke-width="1.5"/>
+  </svg>`,
+  // 6: Gold ingot
+  `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 58 L80 58 L88 75 L12 75 Z" stroke-width="3"/>
+    <path d="M20 58 L25 50 L75 50 L80 58"/>
+    <path d="M25 50 L30 45 L70 45 L75 50"/>
+    <text x="50" y="71" font-family="Orbitron" font-size="9" font-weight="900" text-anchor="middle" fill="currentColor" stroke="none">999</text>
+    <line x1="35" y1="63" x2="65" y2="63" stroke-width="1"/>
+  </svg>`,
+  // 7: Diamond — the apex
+  `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M25 38 L50 22 L75 38 L50 82 Z" stroke-width="3"/>
+    <path d="M25 38 L75 38" stroke-width="2"/>
+    <path d="M25 38 L50 82"/>
+    <path d="M75 38 L50 82"/>
+    <path d="M40 38 L50 22 L60 38"/>
+    <path d="M40 38 L50 60 L60 38" fill="currentColor" fill-opacity="0.15"/>
+    <line x1="50" y1="38" x2="50" y2="22"/>
+    <circle cx="50" cy="50" r="2" fill="currentColor"/>
+  </svg>`,
+];
+
+// ============ SKILL TREE ============
+const SKILL_PERKS={
+  wealth:[{lv:1,n:'Saver'},{lv:2,n:'Investor'},{lv:3,n:'Diversified'},{lv:4,n:'Real Estate'},{lv:5,n:'Freedom'}],
+  body:[{lv:1,n:'Active'},{lv:2,n:'Consistent'},{lv:3,n:'Rehabbed'},{lv:4,n:'Strong'},{lv:5,n:'Unbreakable'}],
+  mind:[{lv:1,n:'Awake'},{lv:2,n:'Reader'},{lv:3,n:'Builder'},{lv:4,n:'Visionary'},{lv:5,n:'Wise'}],
+  hustle:[{lv:1,n:'Worker'},{lv:2,n:'Learner'},{lv:3,n:'Creator'},{lv:4,n:'Entrepreneur'},{lv:5,n:'Mogul'}],
+  discipline:[{lv:1,n:'Committed'},{lv:2,n:'Consistent'},{lv:3,n:'Relentless'},{lv:4,n:'Iron Will'},{lv:5,n:'Legendary'}],
+};
+const SKILL_COLORS={wealth:'#2ee66b',body:'#fb7185',mind:'#a78bfa',hustle:'#f5a524',discipline:'#38bdf8'};
+
+// ============ QUEST ICONS — SVG SYMBOLS ============
+function questIconSVG(type){
+  const icons={
+    money:`<svg viewBox="0 0 32 32"><path d="M16 4 L16 28 M22 8 L13 8 Q9 8 9 12 Q9 16 13 16 L19 16 Q23 16 23 20 Q23 24 19 24 L9 24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`,
+    home:`<svg viewBox="0 0 32 32"><path d="M4 16 L16 5 L28 16 L28 28 L20 28 L20 20 L12 20 L12 28 L4 28 Z" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linejoin="round"/></svg>`,
+    body:`<svg viewBox="0 0 32 32"><circle cx="16" cy="8" r="3.5" stroke="currentColor" stroke-width="2.2" fill="none"/><path d="M16 12 L16 22 M10 16 L22 16 M11 22 L8 28 M21 22 L24 28" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>`,
+    chart:`<svg viewBox="0 0 32 32"><path d="M4 26 L11 18 L17 22 L28 8" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 8 L28 8 L28 14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`,
+    medical:`<svg viewBox="0 0 32 32"><path d="M16 4 L16 28 M4 16 L28 16" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="16" cy="16" r="11" stroke="currentColor" stroke-width="2.2" fill="none"/></svg>`,
+    talk:`<svg viewBox="0 0 32 32"><path d="M5 8 L27 8 L27 22 L18 22 L13 27 L13 22 L5 22 Z" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linejoin="round"/><circle cx="11" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/><circle cx="21" cy="15" r="1" fill="currentColor"/></svg>`,
+    question:`<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="2.2" fill="none"/><path d="M11 12 Q11 8 16 8 Q21 8 21 12 Q21 15 16 17 L16 20" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="16" cy="24" r="1.5" fill="currentColor"/></svg>`,
+    bank:`<svg viewBox="0 0 32 32"><path d="M4 12 L16 4 L28 12 L28 14 L4 14 Z" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linejoin="round"/><line x1="8" y1="14" x2="8" y2="24" stroke="currentColor" stroke-width="2.2"/><line x1="14" y1="14" x2="14" y2="24" stroke="currentColor" stroke-width="2.2"/><line x1="18" y1="14" x2="18" y2="24" stroke="currentColor" stroke-width="2.2"/><line x1="24" y1="14" x2="24" y2="24" stroke="currentColor" stroke-width="2.2"/><rect x="3" y="24" width="26" height="3" stroke="currentColor" stroke-width="2.2" fill="none"/></svg>`,
+    plant:`<svg viewBox="0 0 32 32"><path d="M16 28 L16 14" stroke="currentColor" stroke-width="2.5"/><path d="M16 14 Q8 12 6 18 Q12 18 16 14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linejoin="round"/><path d="M16 18 Q24 16 26 22 Q20 22 16 18" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linejoin="round"/><path d="M14 28 L18 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+    plane:`<svg viewBox="0 0 32 32"><path d="M28 14 L18 14 L14 6 L10 6 L13 14 L6 14 L4 11 L2 11 L4 16 L2 21 L4 21 L6 18 L13 18 L10 26 L14 26 L18 18 L28 18 Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>`,
+    car:`<svg viewBox="0 0 32 32"><path d="M3 20 L6 14 Q8 12 12 12 L20 12 Q24 12 26 14 L29 20 L29 25 L25 25 L25 22 L7 22 L7 25 L3 25 Z" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linejoin="round"/><circle cx="9" cy="24" r="2.5" stroke="currentColor" stroke-width="2" fill="currentColor"/><circle cx="23" cy="24" r="2.5" stroke="currentColor" stroke-width="2" fill="currentColor"/></svg>`,
+    crown:`<svg viewBox="0 0 32 32"><path d="M3 22 L3 10 L9 16 L16 6 L23 16 L29 10 L29 22 Z" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linejoin="round"/><line x1="3" y1="25" x2="29" y2="25" stroke="currentColor" stroke-width="2.5"/></svg>`,
+    bolt:`<svg viewBox="0 0 32 32"><path d="M18 4 L8 18 L15 18 L13 28 L24 13 L17 13 Z" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.2" stroke-linejoin="round"/></svg>`,
+    infinity:`<svg viewBox="0 0 32 32"><path d="M9 16 Q9 11 13 11 Q17 11 19 14 Q21 17 23 17 Q27 17 27 13 Q27 9 23 9 Q21 9 19 12 L19 20 Q21 23 23 23 Q27 23 27 19 Q27 15 23 15 Q21 15 19 18 Q17 21 13 21 Q9 21 9 16 Z" stroke="currentColor" stroke-width="2" fill="none"/></svg>`,
+    star:`<svg viewBox="0 0 32 32"><path d="M16 3 L19 12 L29 12 L21 18 L24 28 L16 22 L8 28 L11 18 L3 12 L13 12 Z" stroke="currentColor" stroke-width="2.2" fill="currentColor" fill-opacity="0.15" stroke-linejoin="round"/></svg>`,
+    rentals:`<svg viewBox="0 0 32 32"><path d="M2 28 L2 14 L8 9 L14 14 L14 28 Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><path d="M14 28 L14 12 L20 7 L26 12 L26 28 Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><rect x="6" y="20" width="3" height="5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="18" y="18" width="3" height="5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`,
+  };
+  return icons[type]||icons.star;
+}
+
+// ============ DEFAULT STATE ============
+const DEF={
+  habits:[
+    {id:1,n:'Gym — min 30 min (anchor)',xp:30,t:'core',tm:'morning',sk:['body','discipline']},
+    {id:2,n:'Shoulder rehab — 10 min',xp:25,t:'core',tm:'morning',sk:['body']},
+    {id:3,n:'Take vitamins',xp:15,t:'core',tm:'morning',sk:['body','discipline']},
+    {id:4,n:'Plan the day (5 min)',xp:10,t:'bonus',tm:'morning',sk:['mind','discipline']},
+    {id:5,n:'Hit 130g+ protein',xp:20,t:'core',tm:'day',sk:['body']},
+    {id:6,n:'30 min AI work — build not watch',xp:25,t:'core',tm:'day',sk:['hustle','mind']},
+    {id:7,n:'Check X — market opps/content',xp:10,t:'bonus',tm:'day',sk:['hustle','wealth']},
+    {id:8,n:'In bed by 10:30',xp:10,t:'core',tm:'night',sk:['discipline','body']},
+    {id:9,n:'Read (15+ min)',xp:15,t:'bonus',tm:'night',sk:['mind']},
+    {id:10,n:'Prayer + daily check-in',xp:15,t:'core',tm:'night',sk:['mind','discipline']},
+  ],
+  weeklyTasks:[
+    {id:101,n:'Save $500 toward duplex',done:{}},
+    {id:102,n:'Invest $100 → brokerage',done:{}},
+    {id:103,n:'Invest $100 → Roth IRA',done:{}},
+    {id:104,n:'Invest $100 → dividend (DGRO)',done:{}},
+    {id:105,n:'Invest $100 → Bitcoin DCA',done:{}},
+    {id:106,n:'Church on Sunday',done:{}},
+    {id:107,n:'Recycle bottles',done:{}},
+    {id:108,n:'Wash the car',done:{}},
+  ],
+  days:{},streak:0,lastSD:null,weekSavings:{},weekTarget:500,
+  positions:{
+    brokerage:[
+      {sym:'TSM',n:'Taiwan Semiconductor',sh:1.97,avg:348.03,t:'stock'},
+      {sym:'TQQQ',n:'ProShares UltraPro QQQ',sh:6.657,avg:49.07,t:'stock'},
+      {sym:'SCHG',n:'Schwab US Large-Cap Growth',sh:15.2,avg:31.36,t:'stock'},
+      {sym:'MSFT',n:'Microsoft',sh:0.01277,avg:394.42,t:'stock'},
+      {sym:'HOOD',n:'Robinhood Markets',sh:17.124776,avg:90.52,t:'stock'},  // FIXED
+      {sym:'XYZ_PUT',n:'XYZ $50 Put 3/19/27',sh:1,avg:665,t:'option',mVal:475,fixed:true},
+    ],
+    roth:[
+      {sym:'SCHD',n:'Schwab US Dividend',sh:35.833224,avg:30.05,t:'stock'},
+      {sym:'VTI',n:'Vanguard Total Market',sh:3.403344,avg:334,t:'stock'},
+    ],
+    dividend:[
+      {sym:'DGRO',n:'iShares Dividend Growth',sh:7.11,avg:72.57,t:'stock'},
+    ],
+    trading:[],
+  },
+  cash:{checking:0,brokerage:81.28,roth:15,dividend:0,trading:75.52},
+  btc:{value:1100},
+  parentLoan:19000,
+  duplex:{saved:1700,target:50000},
+  lifeQuests:[
+    {id:'lq_100k',n:'$100K Invested',sub:'By 30 · the first real milestone',iconType:'money',pct:0,done:false,kind:'life',skill:'wealth',xp:1000},
+    {id:'lq_10k',n:'$10K / Month Income',sub:'Job + side work + rentals + dividends',iconType:'chart',pct:0,done:false,kind:'life',skill:'wealth',xp:1000},
+    {id:'lq_5rent',n:'5 Rental Properties',sub:'Build the real-estate portfolio',iconType:'rentals',pct:0,done:false,kind:'life',skill:'wealth',xp:1000},
+    {id:'lq_m4',n:'BMW M4 G82',sub:'Earn it — don\'t finance a dream',iconType:'car',pct:0,done:false,kind:'life',skill:'discipline',xp:800},
+    {id:'lq_boss',n:'Run the Business as Owner',sub:'Be the boss, not the laborer',iconType:'crown',pct:0,done:false,kind:'life',skill:'hustle',xp:1000},
+    {id:'lq_freedom',n:'Financial Freedom',sub:'Live off dividends + rental income',iconType:'bolt',pct:0,done:false,kind:'life',skill:'wealth',xp:1500},
+  ],
+  mainQuests:[
+    {id:'duplex',n:'Buy a Duplex / Triplex in CT',sub:'FHA 3.5% down · house-hack it',iconType:'home',done:false,deadline:'2027-12-31',kind:'main',skill:'wealth',xp:800,
+      steps:[{t:'Save $15K down payment',done:false},{t:'Get FHA pre-approval',done:false},{t:'Find a realtor',done:false},{t:'Tour 5 properties',done:false},{t:'Make an offer',done:false}]},
+    {id:'inv10',n:'Hit $10K Invested',sub:'≈$6.3K now → $10K',iconType:'chart',done:false,deadline:'2026-12-31',kind:'main',skill:'wealth',xp:500,
+      steps:[{t:'Reach $7,500 invested',done:false},{t:'Reach $9,000 invested',done:false},{t:'Reach $10,000 invested',done:false}]},
+    {id:'shoulder',n:'Heal Shoulder to 100%',sub:'Full strength · avoid surgery',iconType:'body',done:false,deadline:'2026-12-31',kind:'main',skill:'body',xp:500,
+      steps:[{t:'Rehab 5x/week for a month',done:false},{t:'Regain full range of motion',done:false},{t:'Pain-free overhead press',done:false}]},
+    {id:'efund',n:'Build 3-Month Emergency Fund',sub:'1099 income = you need a buffer',iconType:'bank',done:false,deadline:'2027-06-30',kind:'main',skill:'wealth',xp:500,
+      steps:[{t:'$1,000 starter fund',done:false},{t:'1 month of expenses',done:false},{t:'3 months of expenses',done:false}]},
+  ],
+  sideQuests:[
+    {id:'avgcosts',n:'Enter Real Avg Costs',sub:'So gain/loss % is accurate',iconType:'chart',pct:0,done:false,deadline:'2026-10-11',kind:'side',skill:'mind',xp:100},
+    {id:'pricekey',n:'Add Finnhub Price Key',sub:'Turn on live position prices',iconType:'bolt',pct:0,done:false,deadline:'2026-10-11',kind:'side',skill:'mind',xp:100},
+    {id:'sgov',n:'Move Idle Cash to HYSA/SGOV',sub:'Stop letting cash earn 0%',iconType:'bank',pct:0,done:false,deadline:'2026-10-27',kind:'side',skill:'wealth',xp:150},
+    {id:'review',n:'Weekly Money Review',sub:'Every Sunday · 10 minutes',iconType:'talk',pct:0,done:false,deadline:'2026-10-05',kind:'side',skill:'discipline',xp:150},
+  ],
+  skills:[
+    {id:'wealth',n:'WEALTH',c:'#00e090'},
+    {id:'body',n:'BODY',c:'#ff3060'},
+    {id:'mind',n:'MIND',c:'#8060d0'},
+    {id:'hustle',n:'HUSTLE',c:'#d4a73c'},
+    {id:'discipline',n:'DISCIPLINE',c:'#00f0ff'},
+  ],
+  achievements:[
+    {id:'first',n:'First Step',sub:'Complete first full day',xp:100,done:false,auto:true},
+    {id:'s7',n:'One Week Warrior',sub:'7-day streak',xp:250,done:false,auto:true},
+    {id:'s30',n:'Locked In',sub:'30-day streak',xp:500,done:false,auto:true},
+    {id:'inv10k',n:'Invested 10K',sub:'$10K total invested',xp:400,done:false,auto:true},
+    {id:'dup10k',n:'10K Stacked',sub:'$10K toward duplex',xp:400,done:false,auto:true},
+    {id:'tier2',n:'Coin Bearer',sub:'Reached level 11',xp:500,done:false,auto:true},
+    {id:'tier3',n:'Cash Handler',sub:'Reached level 21',xp:1000,done:false,auto:true},
+    {id:'wired_d',n:'Wired In',sub:'Connected live prices',xp:150,done:false,auto:false},
+    {id:'costs_d',n:'Cost Basis Set',sub:'Entered real average costs',xp:150,done:false,auto:false},
+    {id:'efund_d',n:'Safety Net',sub:'First $1K emergency fund',xp:300,done:false,auto:false},
+    {id:'review_d',n:'On The Books',sub:'First weekly money review',xp:150,done:false,auto:false},
+    {id:'sgov_d',n:'Smart Cash',sub:'Idle cash moved to HYSA/SGOV',xp:200,done:false,auto:false},
+    {id:'shoulder_d',n:'Unbreakable',sub:'Shoulder healed to 100%',xp:400,done:false,auto:false},
+    {id:'duplex_d',n:'Landlord',sub:'Closed on the duplex',xp:1000,done:false,auto:false},
+  ],
+  logs:[],journal:{},livePrices:{},apiKey:'',
+  lastDislDate:'2026-04-20',
+  body:{rom:{forward:5,side:4,overhead:3,behind:2},husky:'not_started',mri:'not_scheduled',surgery:'not_needed'},
+  sleep:{},spending:[],nwSnapshots:[],
+  privacyMode:false,
+  questFilter:'all',
+  journalViewDate:null,
+  sheet:{url:'',rows:[],at:''},
+  income:0,
+  lastActiveDay:'',
+  nwHistorySeeded:false,
+  trendRange:0,
+  pricesAt:'',
+  questsV:2,
+  skillBonus:{},
+};
+
+// Real net-worth history carried over from the Monthly Log tab of the tracker.
+// Used once to seed the trend chart; future months are recorded automatically on sheet sync.
+const NW_HISTORY=[
+  {date:'2026-04-01',val:27249},
+  {date:'2026-05-01',val:29116},
+  {date:'2026-06-01',val:31089},
+  {date:'2026-07-01',val:33747},
+  {date:'2026-08-01',val:37067},
+];
+
+// ============ STATE MANAGEMENT ============
+let S=loadState();let hEO=false,aEO=false;
+
+function loadState(){
+  try{
+    const r=localStorage.getItem(SK);
+    if(r){
+      const p=JSON.parse(r);
+      if(p&&p.habits)return migrateState(p);
+    }
+  }catch(e){}
+  return migrateState(JSON.parse(JSON.stringify(DEF)));
+}
+
+// Migrate older versions to current shape, fill in any missing fields
+function migrateState(p){
+  if(!p.cash)p.cash={};
+  if(p.cash.checking===undefined)p.cash.checking=0;
+  if(!p.weeklyTasks)p.weeklyTasks=DEF.weeklyTasks;
+  if(!p.lifeQuests)p.lifeQuests=DEF.lifeQuests;
+  if(!p.spending)p.spending=[];
+  if(!p.sleep)p.sleep={};
+  if(!p.journal)p.journal={};
+  if(!p.nwSnapshots)p.nwSnapshots=[];
+  if(p.privacyMode===undefined)p.privacyMode=false;
+  if(!p.questFilter)p.questFilter='all';
+  if(!p.sheet)p.sheet={url:'',rows:[],at:''};
+  if(p.income===undefined)p.income=0;
+  if(!p.lastActiveDay)p.lastActiveDay='';
+  if(p.trendRange===undefined)p.trendRange=0;
+  if(!p.skillBonus)p.skillBonus={};
+  if(p.spending)p.spending.forEach(s=>{if(s.need===undefined)s.need=false;});
+  // Quests v2: wipe the stale May/June set, install the fresh current-goals set (user-approved).
+  if(p.questsV!==2){
+    p.lifeQuests=JSON.parse(JSON.stringify(DEF.lifeQuests));
+    p.mainQuests=JSON.parse(JSON.stringify(DEF.mainQuests));
+    p.sideQuests=JSON.parse(JSON.stringify(DEF.sideQuests));
+    // refresh achievements to the current set, preserving any already earned
+    const earned={};(p.achievements||[]).forEach(a=>{if(a.done)earned[a.id]=true;});
+    p.achievements=JSON.parse(JSON.stringify(DEF.achievements)).map(a=>({...a,done:a.done||!!earned[a.id]}));
+    p.questsV=2;
+  }
+  // Seed real net-worth history from the Monthly Log (one-time), so the trend line has something to draw.
+  // Monthly points are keyed by first-of-month; only added if that month isn't already present.
+  if(!p.nwHistorySeeded){
+    if(!p.nwSnapshots)p.nwSnapshots=[];
+    NW_HISTORY.forEach(h=>{
+      if(!p.nwSnapshots.some(s=>s.date.slice(0,7)===h.date.slice(0,7)))p.nwSnapshots.push({date:h.date,val:h.val});
+    });
+    p.nwSnapshots.sort((a,b)=>a.date.localeCompare(b.date));
+    p.nwHistorySeeded=true;
+  }
+  // Fix HOOD avg cost if it's the old wrong value
+  if(p.positions&&p.positions.brokerage){
+    const hood=p.positions.brokerage.find(x=>x.sym==='HOOD');
+    if(hood&&hood.avg===19.52)hood.avg=90.52;
+  }
+  // Add iconType to quests that don't have it
+  ['lifeQuests','mainQuests','sideQuests'].forEach(k=>{
+    if(p[k]){
+      p[k].forEach(q=>{
+        if(!q.iconType){
+          const def=(DEF[k]||[]).find(d=>d.id===q.id);
+          if(def)q.iconType=def.iconType;
+          else q.iconType='star';
+        }
+        if(!q.kind){
+          if(k==='lifeQuests')q.kind='life';
+          else if(k==='mainQuests')q.kind='main';
+          else q.kind='side';
+        }
+      });
+    }
+  });
+  return p;
+}
+
+function sv(){
+  try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){console.error('Save failed',e);}
+}
+
+// ============ DATE / TASK HELPERS ============
+function gd(ds){if(!S.days[ds])S.days[ds]={c:{}};return S.days[ds];}
+function cH(){return S.habits.filter(h=>h.t==='core');}
+function bH(){return S.habits.filter(h=>h.t==='bonus');}
+function mCXP(){return cH().reduce((a,h)=>a+h.xp,0);}
+function dXP(ds){const d=gd(ds);return S.habits.reduce((a,h)=>a+(d.c[h.id]?h.xp:0),0);}
+function dCXP(ds){const d=gd(ds);return cH().reduce((a,h)=>a+(d.c[h.id]?h.xp:0),0);}
+function dCDn(ds){const d=gd(ds);return cH().filter(h=>d.c[h.id]).length;}
+function dDone(ds){return dCDn(ds)===cH().length;}
+function dPct(ds){const m=mCXP();return m?Math.round(dCXP(ds)/m*100):0;}
+
+function allQuests(){return[...(S.lifeQuests||[]),...(S.mainQuests||[]),...(S.sideQuests||[])];}
+// A quest's progress: derived from its steps when it has them, else its stored pct (100 when done).
+function questPct(q){
+  if(q.steps&&q.steps.length){const d=q.steps.filter(s=>s.done).length;return Math.round(d/q.steps.length*100);}
+  return q.done?100:(q.pct||0);
+}
+function tXP(){
+  let t=0;
+  Object.keys(S.days).forEach(ds=>t+=dXP(ds));
+  (S.achievements||[]).filter(a=>a.done).forEach(a=>t+=a.xp);
+  allQuests().filter(q=>q.done).forEach(q=>t+=q.xp||0); // completed quests grant XP
+  return t;
+}
+
+function skXP(sid){
+  let t=0;
+  Object.keys(S.days).forEach(ds=>{
+    const d=gd(ds);
+    S.habits.forEach(h=>{
+      if(d.c[h.id]&&h.sk&&h.sk.includes(sid))t+=h.xp;
+    });
+  });
+  allQuests().forEach(q=>{if(q.done&&q.skill===sid)t+=q.xp||0;}); // quests feed their tagged skill
+  t+=(S.skillBonus&&S.skillBonus[sid])||0;                        // manual adjustments
+  return t;
+}
+
+function skLv(xp){
+  const T=[100,300,700,1500,3000,6000];
+  for(let i=0;i<T.length;i++){
+    if(xp<T[i]){
+      const p=i===0?0:T[i-1];
+      return{lv:i+1,next:T[i],pct:Math.round((xp-p)/(T[i]-p)*100)};
+    }
+  }
+  return{lv:T.length+1,next:null,pct:100};
+}
+
+function wkDates(){
+  const d=getToday();d.setDate(d.getDate()-d.getDay());
+  return Array.from({length:7},(_,i)=>{const x=new Date(d);x.setDate(x.getDate()+i);return x;});
+}
+function wkKey(){
+  const d=getToday();d.setDate(d.getDate()-d.getDay());
+  return d.toISOString().split('T')[0];
+}
+
+// ============ POSITIONS / VALUATIONS ============
+function lp(sym){const v=S.livePrices&&S.livePrices[sym];if(v==null)return null;return typeof v==='number'?v:(v.p||null);}
+function lpDay(sym){const v=S.livePrices&&S.livePrices[sym];return(v&&typeof v==='object'&&typeof v.dp==='number')?v.dp:null;}
+function pVal(p){if(p.fixed)return p.mVal||0;const pr=lp(p.sym);return pr?Math.round(p.sh*pr*100)/100:p.sh*p.avg;}
+function acctTot(key){
+  const c=(S.cash&&S.cash[key])||0;
+  const ps=(S.positions&&S.positions[key])||[];
+  return ps.reduce((a,p)=>a+pVal(p),0)+c;
+}
+function totalNW(){
+  if(sheetOn())return sheetTotal();
+  const checking=(S.cash&&S.cash.checking)||0;
+  return acctTot('brokerage')+acctTot('roth')+acctTot('dividend')+acctTot('trading')+((S.btc&&S.btc.value)||0)+(S.parentLoan||0)+(S.duplex&&S.duplex.saved||0)+checking;
+}
+
+// ============ GOOGLE SHEET SYNC ============
+function sheetOn(){return !!(S.sheet&&S.sheet.rows&&S.sheet.rows.length);}
+function sheetTotal(){return sheetOn()?S.sheet.rows.reduce((a,r)=>a+(+r.val||0),0):0;}
+function sheetMatch(re){return sheetOn()?S.sheet.rows.filter(r=>re.test((r.label||'').toLowerCase())).reduce((a,r)=>a+(+r.val||0),0):0;}
+function duplexSaved(){if(sheetOn()){const m=sheetMatch(/duplex|down\s*payment|down-payment|house\s*fund|home\s*fund/);if(m)return m;}return (S.duplex&&S.duplex.saved)||0;}
+function investedTotal(){if(sheetOn()){const m=sheetMatch(/brokerage|roth|ira|dividend|trading|index|etf|stock|invest|401k|vti|schg|schd|taxable/);if(m)return m;}return acctTot('brokerage')+acctTot('roth')+acctTot('dividend');}
+
+function parseNum(x){
+  if(x==null)return NaN;
+  let s=String(x).trim();
+  if(!s)return NaN;
+  const neg=/^\(.*\)$/.test(s)||/-\s*\$?[0-9]/.test(s);
+  s=s.replace(/[()]/g,'').replace(/[^0-9.]/g,'');
+  if(!s||s==='.')return NaN;
+  const v=parseFloat(s);
+  if(isNaN(v))return NaN;
+  return neg?-v:v;
+}
+function parseTable(text){
+  // auto-detect tab (pasted from Sheets) vs comma (published CSV); handles quoted fields
+  const firstLine=text.split(/\r?\n/)[0]||'';
+  const delim=(firstLine.indexOf('\t')>-1)?'\t':',';
+  const rows=[];let i=0,cell='',row=[],q=false;
+  while(i<text.length){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else{
+      if(c==='"')q=true;
+      else if(c===delim){row.push(cell);cell='';}
+      else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell='';}
+      else if(c==='\r'){}
+      else cell+=c;
+    }
+    i++;
+  }
+  if(cell.length||row.length){row.push(cell);rows.push(row);}
+  return rows;
+}
+function rowsToBalances(cells){
+  const out=[];
+  cells.forEach(r=>{
+    if(!r||!r.length)return;
+    let label='',val=NaN;
+    for(let k=r.length-1;k>=0;k--){const n=parseNum(r[k]);if(!isNaN(n)){val=n;break;}}
+    for(let k=0;k<r.length;k++){const t=(r[k]||'').trim();if(t&&isNaN(parseNum(t))){label=t;break;}}
+    if(!label||isNaN(val))return;
+    const low=label.toLowerCase();
+    if(/\b(total|net\s*worth|grand\s*total|sum|subtotal)\b/.test(low))return; // skip summary rows
+    out.push({label:label,val:Math.round(val*100)/100});
+  });
+  return out;
+}
+function applySheetCSV(txt,silent){
+  const bal=rowsToBalances(parseTable(txt));
+  if(!bal.length){if(!silent)cel('▣ NOTHING FOUND','Need rows of: account name , amount');return;}
+  if(!S.sheet)S.sheet={url:'',rows:[],at:''};
+  S.sheet.rows=bal;
+  S.sheet.at=new Date().toISOString();
+  if(!S.nwSnapshots)S.nwSnapshots=[];
+  const nv=sheetTotal();
+  // Record one point per month (stamped first-of-month), updated in place — keeps the trend a clean monthly line.
+  const mKey=getTS().slice(0,7)+'-01';
+  const idx=S.nwSnapshots.findIndex(s=>s.date===mKey);
+  if(idx>=0)S.nwSnapshots[idx]={date:mKey,val:nv};else S.nwSnapshots.push({date:mKey,val:nv});
+  S.nwSnapshots.sort((a,b)=>a.date.localeCompare(b.date));
+  chkAuto();sv();renderAll();
+  if(!silent)cel('▣ SYNCED FROM SHEET','$'+fmt(nv)+' · '+bal.length+' accounts');
+}
+async function syncSheetFromUrl(silent){
+  const url=(S.sheet&&S.sheet.url)||'';
+  if(!url){if(!silent)cel('▣ NO SHEET URL','Paste your published CSV link first');return;}
+  try{
+    const r=await fetch(url,{cache:'no-store'});
+    if(!r.ok)throw new Error('http '+r.status);
+    const txt=await r.text();
+    if(/<html/i.test(txt.slice(0,200)))throw new Error('got a web page, not CSV');
+    applySheetCSV(txt,silent);
+  }catch(e){
+    console.error('sheet sync failed',e);
+    if(!silent)cel('▣ SYNC FAILED','Check the link, or use paste-sync below');
+  }
+}
+function saveSheetUrl(){
+  const el=document.getElementById('sheetUrlInp');if(!el)return;
+  if(!S.sheet)S.sheet={url:'',rows:[],at:''};
+  S.sheet.url=el.value.trim();
+  sv();
+  if(S.sheet.url)syncSheetFromUrl(false);else{cel('▣ LINK CLEARED','Sheet sync off');renderAll();}
+}
+function pasteSyncSheet(){
+  const el=document.getElementById('sheetPasteInp');if(!el)return;
+  const t=el.value;
+  if(!t.trim()){cel('▣ NOTHING PASTED','Copy your sheet, then paste here');return;}
+  applySheetCSV(t,false);
+  el.value='';
+}
+function disconnectSheet(){
+  if(!confirm('Disconnect the sheet? Net worth goes back to manual account values.'))return;
+  S.sheet={url:'',rows:[],at:''};sv();renderAll();
+  cel('▣ SHEET DISCONNECTED','Back to manual balances');
+}
+function renderSheet(){
+  const st=document.getElementById('sheetStatus');
+  const urlEl=document.getElementById('sheetUrlInp');
+  if(urlEl&&document.activeElement!==urlEl)urlEl.value=(S.sheet&&S.sheet.url)||'';
+  if(st){
+    if(sheetOn()){
+      st.textContent='SYNCED $'+fmt(sheetTotal())+' · '+S.sheet.rows.length+' rows';
+      st.style.color='var(--teal)';
+      if(S.sheet.at)st.title='Last synced '+new Date(S.sheet.at).toLocaleString();
+    }else{st.textContent='NOT CONNECTED';st.style.color='';}
+  }
+}
+function currentStreak(){
+  const TS=getTS();
+  const y=getToday();y.setDate(y.getDate()-1);const ys=y.toISOString().split('T')[0];
+  if(S.lastSD===TS||S.lastSD===ys)return S.streak||0;
+  return 0; // last completion older than yesterday = streak broken
+}
+
+function fmt(n){return Math.round(n).toLocaleString();}
+function fmtD(n){return(+n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+function daysBetween(d1,d2){return Math.floor((new Date(d2)-new Date(d1))/(1000*60*60*24));}
+
+// ============ FETCH PRICES ============
+// Collect every real ticker held across all accounts (skip manual/fixed rows like options).
+function heldSymbols(){
+  const set=new Set();
+  ['brokerage','roth','dividend','trading'].forEach(ak=>{
+    ((S.positions&&S.positions[ak])||[]).forEach(p=>{if(p.sym&&!p.fixed&&/^[A-Z.\-]{1,6}$/.test(p.sym))set.add(p.sym);});
+  });
+  return[...set];
+}
+async function fetchPrices(){
+  const key=S.apiKey;
+  const el=document.getElementById('pstat');
+  if(!key){el.textContent='> NO PRICE KEY — add one in Settings';el.className='pstat err';renderAll();return;}
+  const syms=heldSymbols();
+  if(!syms.length){el.textContent='> NO TICKERS';el.className='pstat err';renderAll();return;}
+  el.textContent='> FETCHING';el.className='pstat ld';
+  if(!S.livePrices)S.livePrices={};
+  let ok=0;
+  await Promise.allSettled(syms.map(async sym=>{
+    try{
+      const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${key}`);
+      if(!r.ok)return;
+      const j=await r.json();
+      if(j&&j.c&&j.c>0){S.livePrices[sym]={p:j.c,dp:(typeof j.dp==='number'?j.dp:null)};ok++;}
+    }catch(e){}
+  }));
+  S.pricesAt=new Date().toISOString();
+  sv();
+  if(ok===0){el.textContent='> FETCH FAILED — check key';el.className='pstat err';}
+  else{el.textContent=`> LIVE ${ok}/${syms.length} · ${new Date().toLocaleTimeString()}`;el.className='pstat ok';}
+  renderAll();
+}
+
+// ============ TASK / STREAK / ACHIEVEMENT LOGIC ============
+function toggleH(id){
+  const TS=getTS();
+  const d=gd(TS);
+  d.c[id]=!d.c[id];
+  upStreak();chkAuto();sv();
+  safe(renderToday); // guaranteed instant checkbox repaint, even if a widget below errors
+  renderAll();
+}
+
+function toggleWk(id){
+  const wk=wkKey();
+  if(!S.weeklyTasks)return;
+  const t=S.weeklyTasks.find(x=>x.id===id);
+  if(!t)return;
+  if(!t.done)t.done={};
+  t.done[wk]=!t.done[wk];
+  sv();renderAll();
+}
+
+function upStreak(){
+  const TS=getTS();
+  if(!dDone(TS))return;
+  const y=getToday();y.setDate(y.getDate()-1);
+  const ys=y.toISOString().split('T')[0];
+  if(S.lastSD===ys)S.streak=(S.streak||0)+1;
+  else if(S.lastSD!==TS)S.streak=1;
+  S.lastSD=TS;
+}
+
+function chkAuto(){
+  const TS=getTS();
+  if(dDone(TS)&&!S.achievements.find(a=>a.id==='first').done)uAch('first');
+  if((S.streak||0)>=7&&!S.achievements.find(a=>a.id==='s7').done)uAch('s7');
+  if((S.streak||0)>=30&&!S.achievements.find(a=>a.id==='s30').done)uAch('s30');
+  const inv=investedTotal();
+  if(inv>=10000&&!S.achievements.find(a=>a.id==='inv10k').done)uAch('inv10k');
+  if(duplexSaved()>=10000&&!S.achievements.find(a=>a.id==='dup10k').done)uAch('dup10k');
+  // Tier achievements
+  const lv=getLevel(tXP());
+  if(lv>=11&&!S.achievements.find(a=>a.id==='tier2').done)uAch('tier2');
+  if(lv>=21&&!S.achievements.find(a=>a.id==='tier3').done)uAch('tier3');
+}
+
+function uAch(id){
+  const a=S.achievements.find(x=>x.id===id);
+  if(a&&!a.done){a.done=true;cel('▣ ACHIEVEMENT UNLOCKED',a.n+' · +'+a.xp+' XP');}
+}
+function manUnlock(id){uAch(id);sv();renderAll();}
+
+function questById(id){return allQuests().find(x=>x.id===id);}
+function recalcQuest(q){if(q.steps&&q.steps.length){q.done=q.steps.every(s=>s.done);q.pct=questPct(q);}}
+function toggleStep(qid,idx){
+  const q=questById(qid);if(!q||!q.steps)return;
+  const was=q.done;
+  q.steps[idx].done=!q.steps[idx].done;
+  recalcQuest(q);
+  sv();renderAll();
+  if(!was&&q.done)cel('▣ QUEST COMPLETE','+'+(q.xp||0)+' XP · '+q.n);
+}
+function tgQuest(id){
+  const q=questById(id);if(!q)return;
+  if(q.steps&&q.steps.length){
+    const target=!q.done;q.steps.forEach(s=>s.done=target);recalcQuest(q);
+  }else{
+    q.done=!q.done;q.pct=q.done?100:0;
+  }
+  sv();renderAll();
+  cel(q.done?'▣ QUEST COMPLETE':'▣ QUEST REOPENED',(q.done?'+'+(q.xp||0)+' XP · ':'')+q.n);
+}
+
+// ---- Auto-completing quests: mark them done when the app can already tell you did the thing ----
+function autoQuests(){
+  let changed=false,leveled=false;
+  const done=(q,why)=>{if(q&&!q.done){q.done=true;q.pct=100;if(q.steps)q.steps.forEach(s=>s.done=true);changed=true;leveled=true;cel('▣ QUEST AUTO-COMPLETE','+'+(q.xp||0)+' XP · '+q.n);}};
+  // 1. Finnhub key saved → "Add Finnhub Price Key" completes
+  if(S.apiKey)done(questById('pricekey'));
+  // 2. Every real (non-fixed) position has an average cost entered → "Enter Real Avg Costs" completes
+  const qc=questById('avgcosts');
+  if(qc&&!qc.done){
+    let anyPos=false,allHaveCost=true;
+    ['brokerage','roth','dividend','trading'].forEach(ak=>((S.positions&&S.positions[ak])||[]).forEach(p=>{if(!p.fixed){anyPos=true;if(!(p.avg>0))allHaveCost=false;}}));
+    if(anyPos&&allHaveCost)done(qc);
+  }
+  // 3. "Hit $10K Invested" — tick its step milestones as invested total climbs past each threshold
+  const qi=questById('inv10');
+  if(qi&&qi.steps&&qi.steps.length===3){
+    const inv=investedTotal(),th=[7500,9000,10000];
+    let sc=false;
+    qi.steps.forEach((s,i)=>{const should=inv>=th[i];if(s.done!==should){s.done=should;sc=true;}});
+    if(sc){const was=qi.done;recalcQuest(qi);changed=true;if(!was&&qi.done){leveled=true;cel('▣ QUEST COMPLETE','+'+(qi.xp||0)+' XP · '+qi.n);}}
+  }
+  if(changed)sv();
+  if(leveled){safe(renderHero);}
+}
+
+// ---- Quest add / edit / delete ----
+let qEditId=null; // null = closed, 'new' = adding, else editing that id
+function openQuestEditor(id){qEditId=id||'new';renderQuestEditor();}
+function closeQuestEditor(){qEditId=null;renderQuestEditor();}
+function delQuest(id){
+  if(!confirm('Delete this quest? This cannot be undone.'))return;
+  ['lifeQuests','mainQuests','sideQuests'].forEach(k=>{if(S[k])S[k]=S[k].filter(q=>q.id!==id);});
+  if(qEditId===id)qEditId=null;
+  sv();renderAll();cel('▣ QUEST DELETED','');
+}
+function arrForKind(k){return k==='life'?'lifeQuests':k==='main'?'mainQuests':'sideQuests';}
+function saveQuestForm(){
+  const g=id=>document.getElementById(id);
+  const name=(g('qf-name').value||'').trim();if(!name){alert('Give the quest a name');return;}
+  const kind=g('qf-kind').value;
+  const skill=g('qf-skill').value;
+  const q={
+    n:name,
+    sub:(g('qf-sub').value||'').trim(),
+    kind,
+    iconType:kind==='life'?'bolt':kind==='main'?'star':'chart',
+    skill:skill==='none'?null:skill,
+    xp:parseInt(g('qf-xp').value)||0,
+    deadline:g('qf-deadline').value||null,
+    done:false,pct:0,
+  };
+  const stepsRaw=(g('qf-steps').value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  if(stepsRaw.length)q.steps=stepsRaw.map(t=>({t,done:false}));
+  if(qEditId&&qEditId!=='new'){
+    // editing: pull existing to preserve id + progress, then remove from old array
+    let old=null;
+    ['lifeQuests','mainQuests','sideQuests'].forEach(k=>{const f=(S[k]||[]).find(x=>x.id===qEditId);if(f)old=f;S[k]=(S[k]||[]).filter(x=>x.id!==qEditId);});
+    q.id=qEditId;
+    if(old){
+      q.done=old.done;
+      // keep step-done states for steps whose text is unchanged
+      if(q.steps&&old.steps)q.steps.forEach(s=>{const m=old.steps.find(o=>o.t===s.t);if(m)s.done=m.done;});
+      if(!q.steps)q.pct=old.pct||0;
+      recalcQuest(q);
+    }
+  }else{
+    q.id='q_'+Date.now().toString(36);
+  }
+  S[arrForKind(kind)].push(q);
+  qEditId=null;sv();renderAll();cel('▣ QUEST SAVED',q.n);
+}
+
+function cel(t,m){
+  document.getElementById('celt').textContent=t;
+  document.getElementById('celm').textContent=m;
+  const e=document.getElementById('cel');
+  e.classList.add('show');
+  setTimeout(()=>e.classList.remove('show'),5000);
+}
+
+function ST(id,ev){
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('pane-'+id).classList.add('on');
+  if(ev)ev.target.classList.add('on');
+}
+
+// ============ ACTIONS ============
+function addSav(){
+  const i=document.getElementById('savinp');
+  const v=parseFloat(i.value);
+  if(isNaN(v)||v<=0)return;
+  const wk=wkKey();
+  if(!S.weekSavings)S.weekSavings={};
+  if(!S.weekSavings[wk])S.weekSavings[wk]=0;
+  S.weekSavings[wk]+=v;
+  S.duplex.saved+=v;
+  i.value='';
+  chkAuto();sv();renderAll();
+  cel('▣ +$'+v.toFixed(0)+' BANKED','Duplex fund: $'+fmt(S.duplex.saved));
+}
+
+function saveJ(){
+  if(!S.journal)S.journal={};
+  const TS=getTS();
+  S.journal[TS]=document.getElementById('jtxt').value;
+  sv();
+  document.getElementById('jsaved').textContent='> SAVED '+new Date().toLocaleTimeString();
+}
+
+function saveApiKey(){
+  const k=document.getElementById('apiKeyInp').value.trim();
+  if(k){
+    S.apiKey=k;sv();
+    document.getElementById('apiKeyStatus').textContent='> KEY SAVED · FETCHING...';
+    fetchPrices();
+  }
+}
+
+function snapNW(){
+  if(!S.nwSnapshots)S.nwSnapshots=[];
+  const TS=getTS();
+  const val=totalNW();
+  // De-dupe: replace today's snapshot if it exists
+  const idx=S.nwSnapshots.findIndex(s=>s.date===TS);
+  if(idx>=0)S.nwSnapshots[idx]={date:TS,val};
+  else S.nwSnapshots.push({date:TS,val});
+  sv();renderAll();
+  cel('▣ SNAPSHOT SAVED','Net worth: $'+fmt(val));
+}
+
+function addSpend(){
+  const amt=parseFloat(document.getElementById('spend-amt').value);
+  const desc=document.getElementById('spend-desc').value.trim();
+  const cat=document.getElementById('spend-cat').value;
+  const need=document.getElementById('spend-nw').value==='need';
+  if(isNaN(amt)||amt<=0||!desc)return;
+  if(!S.spending)S.spending=[];
+  S.spending.push({amt,desc,cat,date:getTS(),need});
+  document.getElementById('spend-amt').value='';
+  document.getElementById('spend-desc').value='';
+  sv();safe(renderSpend);renderAll();
+  cel('▣ -$'+amt.toFixed(2)+' LOGGED',(need?'need · ':'want · ')+desc);
+}
+function saveIncome(){
+  const el=document.getElementById('income-inp');if(!el)return;
+  S.income=parseFloat(el.value)||0;
+  sv();safe(renderSpend);
+  cel('▣ INCOME SET','$'+fmt(S.income)+'/mo take-home');
+}
+
+function logSleep(val){
+  if(!S.sleep)S.sleep={};
+  S.sleep[getTS()]=val;
+  sv();renderBody();
+}
+
+function saveDislDate(){
+  const v=document.getElementById('lastDislDate').value;
+  if(v){S.lastDislDate=v;sv();renderBody();cel('▣ DISLOCATION DATE SAVED','Counter reset');}
+}
+
+function setBodyStatus(field,val){
+  if(!S.body)S.body={};
+  S.body[field]=val;sv();renderBody();
+  cel('▣ STATUS UPDATED',field.toUpperCase()+': '+val.toUpperCase());
+}
+
+function saveROM(){
+  if(!S.body)S.body={};if(!S.body.rom)S.body.rom={};
+  ['forward','side','overhead','behind'].forEach(k=>{
+    const el=document.getElementById('rom-'+k);
+    if(el)S.body.rom[k]=parseInt(el.value)||0;
+  });
+  sv();renderBody();cel('▣ ROM SAVED','Track those numbers up over time');
+}
+
+// ============ PRIVACY MODE ============
+function togglePrivacy(){
+  S.privacyMode=!S.privacyMode;
+  sv();renderAll();
+}
+
+// ============ QUEST FILTERING ============
+function filterQuests(filter,ev){
+  S.questFilter=filter;sv();
+  document.querySelectorAll('.qpb-item').forEach(el=>el.classList.remove('active'));
+  if(ev)ev.target.classList.add('active');
+  renderQuests();
+}
+
+// ============ JOURNAL VIEWER ============
+function viewJournalDay(ds){
+  S.journalViewDate=ds;sv();renderLog();
+}
+function navJournal(dir){
+  const dates=Object.keys(S.journal||{}).filter(k=>S.journal[k]&&S.journal[k].trim()).sort();
+  if(!dates.length)return;
+  let idx=dates.indexOf(S.journalViewDate);
+  if(idx===-1)idx=dates.length-1;
+  idx+=dir;
+  if(idx<0)idx=0;
+  if(idx>=dates.length)idx=dates.length-1;
+  S.journalViewDate=dates[idx];sv();renderLog();
+}
+function navJournalToday(){S.journalViewDate=getTS();sv();renderLog();}
+
+// ============ MORNING BRIEFING ============
+function getBriefing(){
+  const TS=getTS();
+  const msgs=[];
+  // Streak on the line — lead with it
+  const cs=currentStreak();
+  const doneN=dCDn(TS),needN=cH().length;
+  if(cs>0&&doneN<needN){
+    msgs.push(`<strong>🔥 ${cs}-day streak on the line.</strong> ${doneN}/${needN} core tasks done — finish today to keep it alive.`);
+  }else if(cs>0&&doneN>=needN){
+    msgs.push(`<strong>🔥 ${cs} days locked in.</strong> Today's core is done. Come back tomorrow to extend it.`);
+  }else if(cs===0&&doneN<needN){
+    msgs.push(`<strong>Streak's at zero.</strong> Clear today's ${needN} core tasks to start a new one.`);
+  }
+  // Rehab check
+  let rehabMiss=0;
+  for(let i=1;i<=3;i++){
+    const d=getToday();d.setDate(d.getDate()-i);
+    const ds=d.toISOString().split('T')[0];
+    const dd=gd(ds);
+    const rh=S.habits.find(h=>h.n.toLowerCase().includes('rehab'));
+    if(rh&&!dd.c[rh.id])rehabMiss++;
+  }
+  if(rehabMiss>=2)msgs.push(`<strong>You've skipped rehab ${rehabMiss} of the last 3 days.</strong> The shoulder won't heal itself. Get it done today.`);
+  // Savings check
+  const wk=wkKey();const sav=(S.weekSavings&&S.weekSavings[wk])||0;
+  const dow=getToday().getDay();
+  if(dow>=4&&sav<S.weekTarget){
+    const gap=S.weekTarget-sav;
+    msgs.push(`You're <strong>$${fmt(gap)} short</strong> of this week's $${S.weekTarget} duplex target. ${dow===6?'Last day to hit it.':'Time is running out.'}`);
+  }
+  // Streak
+  if(S.streak>=7)msgs.push(`<strong>${S.streak}-day streak.</strong> That's not luck — that's discipline. Don't break it.`);
+  else if(S.streak>=3)msgs.push(`<strong>${S.streak}-day streak</strong> building. Keep it alive today.`);
+  // Duplex ETA
+  const remaining=Math.max(0,S.duplex.target-S.duplex.saved);
+  const weeksLeft=Math.ceil(remaining/S.weekTarget);
+  if(weeksLeft>0&&weeksLeft<200)msgs.push(`Duplex fund: <strong>$${fmt(S.duplex.saved)}</strong> of $${fmt(S.duplex.target)}. At $${S.weekTarget}/wk → <strong>${weeksLeft} weeks</strong> out.`);
+  // Quest deadlines
+  const allQ=[...(S.mainQuests||[]),...(S.sideQuests||[])];
+  allQ.forEach(q=>{
+    if(!q.done&&q.deadline){
+      const dl=daysBetween(TS,q.deadline);
+      if(dl<0)msgs.push(`⚠ <strong>${q.n}</strong> is ${Math.abs(dl)} days overdue. Handle it.`);
+      else if(dl<=7)msgs.push(`<strong>${q.n}</strong> due in ${dl} day${dl===1?'':'s'}. Move on it.`);
+    }
+  });
+  if(!msgs.length){
+    const idx=getToday().getDate()%MOTIVS.length;
+    msgs.push(MOTIVS[idx]);
+  }
+  return msgs[0];
+}
+
+// ============ DRAWING ============
+function drawPie(cid,data,lid){
+  const c=document.getElementById(cid);if(!c)return;
+  const ctx=c.getContext('2d');
+  const W=c.width,H=c.height,cx=W/2,cy=H/2,r=W/2-8,ir=r*.52;
+  ctx.clearRect(0,0,W,H);
+  // Only positive-value slices, sorted largest first, so slices AND legend share one index (fixes single-color bug).
+  const slices=data.filter(d=>d.val>0).sort((a,b)=>b.val-a.val);
+  const tot=slices.reduce((a,d)=>a+d.val,0);
+  if(tot<=0){
+    ctx.fillStyle='#4c5f52';ctx.font='10px JetBrains Mono';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('NO DATA',cx,cy);
+    const leg0=document.getElementById(lid);if(leg0)leg0.innerHTML='';
+    return;
+  }
+  let ang=-Math.PI/2;
+  slices.forEach((d,i)=>{
+    const sl=2*Math.PI*(d.val/tot);
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,ang,ang+sl);ctx.closePath();
+    ctx.fillStyle=PC[i%PC.length];ctx.fill();
+    ctx.strokeStyle='#050706';ctx.lineWidth=2;ctx.stroke(); // 2px surface gap between slices
+    ang+=sl;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,ir,0,2*Math.PI);ctx.fillStyle='#0a0d0a';ctx.fill();
+  ctx.strokeStyle='#1e2a1f';ctx.lineWidth=1;ctx.stroke();
+  // Center total
+  ctx.fillStyle='#2ee66b';ctx.font='800 15px "JetBrains Mono"';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(S.privacyMode?'$•••':'$'+fmt(tot),cx,cy-2);
+  ctx.fillStyle='#7f9a86';ctx.font='8px "JetBrains Mono"';
+  ctx.fillText('NET WORTH',cx,cy+12);
+  const leg=document.getElementById(lid);if(!leg)return;
+  leg.innerHTML=slices.map((d,i)=>{
+    const pct=Math.round(d.val/tot*100);
+    return `<div class="legr"><div class="legd" style="background:${PC[i%PC.length]}"></div><span>${d.label}</span><span class="legv${S.privacyMode?' hidden':''}">$${fmt(d.val)} · ${pct}%</span></div>`;
+  }).join('');
+}
+
+const MON3=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function mlabel(ds){const p=ds.split('-');return MON3[(+p[1]||1)-1]+" '"+p[0].slice(2);}
+const NW_GOALS=[50000,100000,250000];
+let _trend=null; // geometry cached for the scrub handler
+
+function setRange(m){
+  S.trendRange=m;sv();
+  document.querySelectorAll('#rangeRow .rbtn').forEach(b=>b.classList.toggle('on',+b.dataset.r===m));
+  drawTrend();
+}
+function trendSnaps(){
+  let snaps=(S.nwSnapshots||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const m=S.trendRange||0;
+  if(m>0&&snaps.length>m)snaps=snaps.slice(-m);
+  return snaps;
+}
+// Update the big hero number + change line for a given point index (or the last point when idx=null)
+function trendHero(snaps,idx){
+  if(!snaps.length)return;
+  const base=snaps[0].val;
+  const cur=(idx==null?snaps[snaps.length-1]:snaps[idx]).val;
+  const chg=cur-base,pctv=base?Math.round(chg/base*1000)/10:0,up=chg>=0;
+  const numEl=document.getElementById('nwHeroNum');
+  const chgEl=document.getElementById('nwHeroChg');
+  if(numEl)numEl.textContent=S.privacyMode?'$•••':'$'+fmt(cur);
+  if(chgEl)chgEl.innerHTML=S.privacyMode?'':
+    `<span style="color:${up?'var(--gold)':'var(--red)'}">${up?'▲':'▼'} $${fmt(Math.abs(chg))} (${up?'+':''}${pctv}%)</span><span class="lbl">since ${mlabel(snaps[0].date)}</span>`;
+}
+
+function drawTrend(){
+  const c=document.getElementById('trendchart');if(!c)return;
+  const snaps=trendSnaps();
+  document.getElementById('trendcount').textContent=(S.nwSnapshots||[]).length+' MONTHS';
+  const cssW=c.offsetWidth||620,H=190;
+  const DPR=window.devicePixelRatio||1;
+  c.width=cssW*DPR;c.height=H*DPR;
+  const ctx=c.getContext('2d');ctx.setTransform(DPR,0,0,DPR,0,0);
+  const W=cssW;ctx.clearRect(0,0,W,H);
+  trendHero(snaps,null);
+  if(snaps.length<2){
+    ctx.fillStyle='#4c5f52';ctx.font='12px "JetBrains Mono"';ctx.textAlign='center';
+    ctx.fillText('Sync your sheet to build the trend line',W/2,H/2);
+    _trend=null;return;
+  }
+  const vals=snaps.map(s=>s.val);
+  const lo=Math.min(...vals),hi=Math.max(...vals),span=(hi-lo)||1;
+  // include the nearest goal above current, if it's within reach, so the climb reads as progress
+  const nextGoal=NW_GOALS.find(g=>g>hi);
+  let mx=hi+span*.15;
+  if(nextGoal&&nextGoal<=hi*1.6)mx=Math.max(mx,nextGoal*1.02);
+  const mn=lo-span*.22;
+  const pad={t:14,r:12,b:22,l:12};
+  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const X=i=>pad.l+(cw*i/(snaps.length-1));
+  const Y=v=>pad.t+ch*(1-(v-mn)/(mx-mn));
+  // Goal milestone lines (dashed, only if in view) — Robinhood-clean, no other gridlines
+  ctx.save();ctx.setLineDash([4,4]);ctx.lineWidth=1;
+  NW_GOALS.forEach(g=>{
+    if(g<=mx&&g>mn){
+      const y=Y(g);
+      ctx.strokeStyle='rgba(245,165,36,.35)';
+      ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+      ctx.setLineDash([]);ctx.fillStyle='#f5a524';ctx.font='700 9px "JetBrains Mono"';ctx.textAlign='right';ctx.textBaseline='bottom';
+      ctx.fillText('$'+fmt(g)+' GOAL',W-pad.r,y-2);ctx.setLineDash([4,4]);
+    }
+  });
+  ctx.restore();
+  // Area fill (subtle)
+  ctx.beginPath();ctx.moveTo(X(0),H-pad.b);
+  snaps.forEach((s,i)=>ctx.lineTo(X(i),Y(s.val)));
+  ctx.lineTo(X(snaps.length-1),H-pad.b);ctx.closePath();
+  const grad=ctx.createLinearGradient(0,pad.t,0,H-pad.b);
+  grad.addColorStop(0,'rgba(46,230,107,.22)');grad.addColorStop(1,'rgba(46,230,107,0)');
+  ctx.fillStyle=grad;ctx.fill();
+  // The line — thin, bright, soft glow
+  ctx.beginPath();
+  snaps.forEach((s,i)=>{const x=X(i),y=Y(s.val);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+  ctx.strokeStyle='#2ee66b';ctx.lineWidth=2;ctx.lineJoin='round';
+  ctx.shadowColor='rgba(46,230,107,.5)';ctx.shadowBlur=7;ctx.stroke();ctx.shadowBlur=0;
+  // "You are here" — dotted line at latest value + end dot
+  const lastY=Y(vals[vals.length-1]),lastX=X(snaps.length-1);
+  ctx.save();ctx.setLineDash([2,3]);ctx.strokeStyle='rgba(223,245,230,.25)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad.l,lastY);ctx.lineTo(lastX,lastY);ctx.stroke();ctx.restore();
+  ctx.beginPath();ctx.arc(lastX,lastY,4,0,2*Math.PI);ctx.fillStyle='#2ee66b';ctx.fill();
+  ctx.strokeStyle='#050706';ctx.lineWidth=2;ctx.stroke();
+  // cache geometry for scrubbing
+  _trend={snaps,X,Y,pad,W,H,ch};
+  // draw any active scrub marker
+  if(_trend.hoverIdx!=null)paintScrub(_trend.hoverIdx);
+}
+
+function paintScrub(idx){
+  const c=document.getElementById('trendchart');if(!c||!_trend)return;
+  drawTrendBase(); // redraw clean, then overlay
+  const {X,Y,snaps,pad,H}=_trend;
+  const s=snaps[idx];if(!s)return;
+  const x=X(idx),y=Y(s.val);
+  const ctx=c.getContext('2d');
+  ctx.save();ctx.setLineDash([2,3]);ctx.strokeStyle='rgba(223,245,230,.4)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,H-pad.b);ctx.stroke();ctx.restore();
+  ctx.beginPath();ctx.arc(x,y,5,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();
+  ctx.strokeStyle='#2ee66b';ctx.lineWidth=2.5;ctx.stroke();
+  // update hero + scrub label
+  trendHero(snaps,idx);
+  const scr=document.getElementById('nwScrub');
+  if(scr){scr.classList.add('on');scr.innerHTML=`${mlabel(s.date)}<b>${S.privacyMode?'$•••':'$'+fmt(s.val)}</b>`;}
+}
+// lightweight base redraw used during scrub (re-runs full drawTrend but without recursion into scrub)
+function drawTrendBase(){const h=_trend?_trend.hoverIdx:null;if(_trend)_trend.hoverIdx=null;drawTrend();if(_trend)_trend.hoverIdx=h;}
+
+function trendPointerMove(ev){
+  if(!_trend||!_trend.snaps||_trend.snaps.length<2)return;
+  const c=document.getElementById('trendchart');const rect=c.getBoundingClientRect();
+  const px=(ev.touches?ev.touches[0].clientX:ev.clientX)-rect.left;
+  const {snaps,pad,W}=_trend;
+  const cw=W-pad.l-pad.r;
+  let idx=Math.round((px-pad.l)/cw*(snaps.length-1));
+  idx=Math.max(0,Math.min(snaps.length-1,idx));
+  if(idx!==_trend.hoverIdx){_trend.hoverIdx=idx;paintScrub(idx);}
+}
+function trendPointerLeave(){
+  if(!_trend)return;_trend.hoverIdx=null;
+  const scr=document.getElementById('nwScrub');if(scr)scr.classList.remove('on');
+  drawTrend();
+}
+
+// ============ ROW BUILDERS ============
+function pRowH(p){
+  const pr=lp(p.sym);
+  const val=pVal(p);
+  const cost=p.fixed?p.avg:p.sh*p.avg;
+  const hasPrice=!!pr||p.fixed;             // fixed rows carry a manual market value
+  const canPct=hasPrice&&cost>0;
+  const gp=canPct?Math.round((val-cost)/cost*10000)/100:null;
+  const gain=canPct?val-cost:null;
+  // % cell: real gain/loss vs cost when we can compute it, else an honest dash
+  let pctCell;
+  if(gp===null){
+    pctCell=`<div class="ppct" style="color:var(--faint)" title="${pr?'set your average cost to see gain/loss':'no live price yet — add a price key in Settings'}">—</div>`;
+  }else{
+    pctCell=`<div class="ppct ${gp>=0?'up':'dn'}">${gp>=0?'+':''}${gp}%</div>`;
+  }
+  const dp=lpDay(p.sym);
+  const dayTag=(dp!=null)?`<span style="font-size:8px;color:${dp>=0?'var(--gold)':'var(--red)'};margin-left:5px">${dp>=0?'+':''}${dp.toFixed(1)}% today</span>`:'';
+  const costTag=(!p.fixed&&p.avg>0)?`<span style="font-size:8px;color:var(--faint)"> · avg $${p.avg}</span>`:'';
+  const gainTag=(gain!=null&&!S.privacyMode)?`<div style="font-size:8px;color:${gain>=0?'var(--gold)':'var(--red)'}">${gain>=0?'+':'-'}$${fmtD(Math.abs(gain))}</div>`:'';
+  return`<div class="prow${p.t==='option'?' spec':''}">
+    <div><div class="psym">${p.sym}${p.t==='option'?' ⚠':''}${dayTag}</div><div class="psub">${p.n}${costTag}</div></div>
+    <div class="psh">${p.fixed?'1 ctr':p.sh.toFixed(p.sh<1?5:3)+' sh'}</div>
+    <div class="plv">${pr?'$'+pr.toFixed(2):(p.fixed?'manual':'—')}</div>
+    <div class="pvl${S.privacyMode?' hidden':''}">$${fmtD(val)}${gainTag}</div>
+    ${pctCell}
+  </div>`;
+}
+
+const SKILL_TAG={wealth:'WEALTH',body:'BODY',mind:'MIND',hustle:'HUSTLE',discipline:'DISCIPLINE'};
+function questCardHTML(q){
+  const TS=getTS();
+  const pct=questPct(q);
+  let dlClass='ok',dlText='';
+  if(q.deadline&&!q.done){
+    const dl=daysBetween(TS,q.deadline);
+    if(dl<0){dlClass='overdue';dlText=`⚠ ${Math.abs(dl)}D OVERDUE`;}
+    else if(dl<=14){dlClass='soon';dlText=`${dl}D LEFT`;}
+    else dlText=`DUE ${q.deadline}`;
+  }else if(q.done){dlClass='ok';dlText='✓ COMPLETE';}
+  const isUrgent=q.deadline&&!q.done&&daysBetween(TS,q.deadline)<=7;
+  const cls=`quest-card ${q.done?'done':''} ${isUrgent?'urgent':''} ${q.kind==='life'?'life':''}`;
+  const skillTag=q.skill?`<span class="q-skill s-${q.skill}">${SKILL_TAG[q.skill]||''}</span>`:'';
+  const xpTag=q.xp?`<span class="q-xp">+${q.xp} XP</span>`:'';
+  // sub-steps
+  let stepsHTML='';
+  if(q.steps&&q.steps.length){
+    stepsHTML=`<div class="q-steps">`+q.steps.map((s,i)=>
+      `<div class="q-step ${s.done?'done':''}" onclick="toggleStep('${q.id}',${i})"><span class="q-step-box">${s.done?'✓':''}</span><span class="q-step-t">${s.t}</span></div>`
+    ).join('')+`</div>`;
+  }
+  return`<div class="${cls}">
+    <div class="qc-row">
+      <div class="qc-icon" onclick="tgQuest('${q.id}')" title="Mark complete">${questIconSVG(q.iconType||'star')}</div>
+      <div class="qc-info">
+        <div class="qc-name">${q.n} ${skillTag}${xpTag}</div>
+        <div class="qc-sub">${q.sub||''}</div>
+        ${dlText?`<div class="qc-deadline ${dlClass}">${dlText}</div>`:''}
+        <div class="qc-bar-track"><div class="qc-bar-fill" style="width:${pct}%"></div></div>
+        ${stepsHTML}
+      </div>
+      <div class="qc-side">
+        <div class="qc-pct">${pct}%</div>
+        <div class="qc-actions">
+          <button class="qmini" onclick="openQuestEditor('${q.id}')" title="Edit">✎</button>
+          <button class="qmini danger" onclick="delQuest('${q.id}')" title="Delete">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderQuestEditor(){
+  const box=document.getElementById('quest-editor');if(!box)return;
+  if(!qEditId){box.innerHTML='';box.classList.remove('open');return;}
+  box.classList.add('open');
+  const editing=qEditId!=='new';
+  const q=editing?questById(qEditId):{n:'',sub:'',kind:'main',skill:'wealth',xp:200,deadline:'',steps:[]};
+  if(!q){box.innerHTML='';return;}
+  const opt=(v,cur,lbl)=>`<option value="${v}" ${v===cur?'selected':''}>${lbl}</option>`;
+  box.innerHTML=`
+    <div class="qe-title">${editing?'EDIT QUEST':'NEW QUEST'}</div>
+    <input class="inp" id="qf-name" placeholder="Quest name" value="${(q.n||'').replace(/"/g,'&quot;')}">
+    <input class="inp" id="qf-sub" placeholder="Short subtitle (optional)" value="${(q.sub||'').replace(/"/g,'&quot;')}">
+    <div class="qe-row">
+      <select class="inp" id="qf-kind">${opt('main',q.kind,'Main')}${opt('side',q.kind,'Side')}${opt('life',q.kind,'Life goal')}</select>
+      <select class="inp" id="qf-skill">${opt('wealth',q.skill,'Wealth')}${opt('body',q.skill,'Body')}${opt('mind',q.skill,'Mind')}${opt('hustle',q.skill,'Hustle')}${opt('discipline',q.skill,'Discipline')}${opt('none',q.skill,'No skill')}</select>
+    </div>
+    <div class="qe-row">
+      <input class="inp" id="qf-xp" type="number" min="0" step="50" placeholder="XP reward" value="${q.xp||0}" title="XP awarded on completion">
+      <input class="inp" id="qf-deadline" type="date" value="${q.deadline||''}" title="Deadline (optional)">
+    </div>
+    <textarea class="inp qe-steps" id="qf-steps" placeholder="Sub-steps — one per line (optional)">${(q.steps||[]).map(s=>s.t).join('\n')}</textarea>
+    <div class="qe-actions">
+      <button class="btn btn-g btn-sm" onclick="saveQuestForm()">SAVE</button>
+      <button class="btn btn-sm" onclick="closeQuestEditor()">CANCEL</button>
+    </div>`;
+}
+
+// ============ RENDER FUNCTIONS ============
+function safe(fn){try{fn();}catch(e){console.error('LIFE.OS render error in',fn.name||'fn',e);}}
+function renderAll(){
+  safe(rClk);safe(renderHero);safe(renderToday);safe(renderFin);safe(renderSpend);safe(renderBody);safe(renderQuests);safe(renderSkills);safe(renderLog);safe(renderBrief);safe(renderJournal);safe(renderSpotify);safe(renderSheet);safe(applyPrivacyMode);
+}
+
+// ============ SPOTIFY WIDGET ============
+// ============ SPOTIFY — PKCE FLOW ============
+const SP_CLIENT_ID='0e989474482048948d7af7263d2cf996';
+const SP_REDIRECT='https://jurvy12.github.io/lifeos-callback/callback.html';
+const SP_SCOPES='user-read-currently-playing user-read-recently-played user-read-playback-state';
+let spToken=null,spRefreshTimer=null;
+
+// PKCE helpers
+async function spGenVerifier(){
+  const arr=new Uint8Array(64);
+  crypto.getRandomValues(arr);
+  return btoa(String.fromCharCode(...arr)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+async function spGenChallenge(verifier){
+  const data=new TextEncoder().encode(verifier);
+  const digest=await crypto.subtle.digest('SHA-256',data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+async function spAuth(){
+  const verifier=await spGenVerifier();
+  const challenge=await spGenChallenge(verifier);
+  localStorage.setItem('sp_verifier',verifier);
+  // Redirect the current page to Spotify auth
+  // After auth, Spotify sends user to callback page
+  // Callback page will show the code for manual paste
+  const url='https://accounts.spotify.com/authorize'
+    +'?client_id='+SP_CLIENT_ID
+    +'&response_type=code'
+    +'&redirect_uri='+encodeURIComponent(SP_REDIRECT)
+    +'&scope='+encodeURIComponent(SP_SCOPES)
+    +'&code_challenge_method=S256'
+    +'&code_challenge='+challenge;
+  window.open(url,'_blank');
+  // Show the paste input
+  const el=document.getElementById('spotifyWidget');
+  if(el){
+    el.innerHTML=`
+      <div style="padding:14px 16px">
+        <div style="font-family:var(--mono);font-size:9px;color:#1DB954;letter-spacing:.12em;margin-bottom:8px;font-weight:700">STEP 2: PASTE YOUR CODE</div>
+        <div style="font-family:var(--body);font-size:11px;color:var(--dim);margin-bottom:8px;line-height:1.5">After approving in the new tab, copy the code shown on the page and paste it below:</div>
+        <div style="display:flex;gap:5px">
+          <input class="inp" type="text" id="spCodeInp" placeholder="paste code here..." style="font-family:var(--mono);font-size:10px;flex:1">
+          <button class="spotify-btn" onclick="spSubmitCode()">GO</button>
+        </div>
+      </div>`;
+  }
+}
+
+async function spSubmitCode(){
+  const inp=document.getElementById('spCodeInp');
+  if(!inp)return;
+  const code=inp.value.trim();
+  if(!code){alert('Paste the code from the callback page first');return;}
+  await spExchange(code);
+}
+
+async function spExchange(code){
+  const verifier=localStorage.getItem('sp_verifier');
+  if(!verifier){renderSpotify();return;}
+  try{
+    const r=await fetch('https://accounts.spotify.com/api/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({
+        grant_type:'authorization_code',
+        code,
+        redirect_uri:SP_REDIRECT,
+        client_id:SP_CLIENT_ID,
+        code_verifier:verifier,
+      })
+    });
+    const d=await r.json();
+    if(d.access_token){
+      spToken=d.access_token;
+      // Store refresh token if we got one
+      if(d.refresh_token)localStorage.setItem('sp_refresh',d.refresh_token);
+      localStorage.removeItem('sp_verifier');
+      spFetch();
+      if(spRefreshTimer)clearInterval(spRefreshTimer);
+      spRefreshTimer=setInterval(spFetch,30000);
+      // Schedule token refresh before it expires (tokens last 1hr)
+      setTimeout(spRefreshToken,(d.expires_in-60)*1000);
+    }
+  }catch(e){console.error('Spotify token exchange failed',e);renderSpotify();}
+}
+
+async function spRefreshToken(){
+  const refresh=localStorage.getItem('sp_refresh');
+  if(!refresh)return;
+  try{
+    const r=await fetch('https://accounts.spotify.com/api/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({
+        grant_type:'refresh_token',
+        refresh_token:refresh,
+        client_id:SP_CLIENT_ID,
+      })
+    });
+    const d=await r.json();
+    if(d.access_token){
+      spToken=d.access_token;
+      if(d.refresh_token)localStorage.setItem('sp_refresh',d.refresh_token);
+      setTimeout(spRefreshToken,(d.expires_in-60)*1000);
+    }
+  }catch(e){console.error('Spotify refresh failed',e);}
+}
+
+async function spFetch(){
+  if(!spToken){renderSpotify();return;}
+  const el=document.getElementById('spotifyWidget');
+  if(!el)return;
+  try{
+    const r=await fetch('https://api.spotify.com/v1/me/player/currently-playing',{
+      headers:{Authorization:'Bearer '+spToken}
+    });
+    if(r.status===401){spToken=null;renderSpotify();return;}
+    if(r.status===204){await spRecent();return;}
+    if(!r.ok){renderSpotify();return;}
+    const d=await r.json();
+    if(!d||!d.item){await spRecent();return;}
+    spRender(d.item,d.is_playing,d.progress_ms,d.item.duration_ms,false);
+  }catch(e){renderSpotify();}
+}
+
+async function spRecent(){
+  const el=document.getElementById('spotifyWidget');
+  if(!el)return;
+  try{
+    const r=await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=1',{
+      headers:{Authorization:'Bearer '+spToken}
+    });
+    if(!r.ok){renderSpotify();return;}
+    const d=await r.json();
+    if(d&&d.items&&d.items.length>0){
+      spRender(d.items[0].track,false,0,d.items[0].track.duration_ms,true);
+    }else{renderSpotify();}
+  }catch(e){renderSpotify();}
+}
+
+function spRender(track,isPlaying,progress,duration,isRecent){
+  const el=document.getElementById('spotifyWidget');
+  if(!el)return;
+  const art=track.album&&track.album.images&&track.album.images[0]?track.album.images[0].url:'';
+  const name=track.name||'Unknown';
+  const artist=(track.artists||[]).map(a=>a.name).join(', ')||'Unknown';
+  const pct=duration>0?Math.round(progress/duration*100):0;
+  const ms2t=ms=>{const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0');};
+  el.innerHTML=`
+    <div class="spotify-widget">
+      ${art?`<img src="${art}" style="width:48px;height:48px;object-fit:cover;border-radius:3px;flex-shrink:0;box-shadow:0 0 12px rgba(29,185,84,.4)" alt="art">`:`<div class="spotify-icon"><svg viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg></div>`}
+      <div class="spotify-info">
+        <div style="font-family:var(--mono);font-size:8px;color:${isRecent?'var(--faint)':'#1DB954'};letter-spacing:.15em;margin-bottom:3px;font-weight:700">${isRecent?'LAST PLAYED':'▶ NOW PLAYING'}</div>
+        <div class="spotify-track">${name}</div>
+        <div class="spotify-artist">${artist}</div>
+        ${!isRecent?`
+        <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
+          <span style="font-family:var(--mono);font-size:8px;color:var(--faint)">${ms2t(progress)}</span>
+          <div style="flex:1;height:3px;background:var(--line);overflow:hidden;border-radius:2px">
+            <div style="width:${pct}%;height:100%;background:#1DB954;border-radius:2px;transition:width .5s"></div>
+          </div>
+          <span style="font-family:var(--mono);font-size:8px;color:var(--faint)">${ms2t(duration)}</span>
+        </div>`:''}
+      </div>
+      <button class="spotify-btn" onclick="spFetch()">↻</button>
+    </div>`;
+}
+
+function renderSpotify(){
+  const el=document.getElementById('spotifyWidget');
+  if(!el)return;
+  if(spToken){
+    el.innerHTML=`<div class="spotify-loading" style="padding:14px 16px">↻ Fetching track...</div>`;
+    return;
+  }
+  el.innerHTML=`
+    <div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--cyan);letter-spacing:.12em;margin-bottom:3px">SPOTIFY</div>
+        <div style="font-family:var(--body);font-size:12px;color:var(--dim)">Connect to see what's playing</div>
+      </div>
+      <button class="spotify-btn" onclick="spAuth()">CONNECT</button>
+    </div>`;
+}
+
+function applyPrivacyMode(){
+  const btn=document.getElementById('privBtn');
+  if(S.privacyMode){
+    btn.classList.add('on');
+    btn.textContent='◉ HIDDEN';
+    document.querySelectorAll('.nwamt,.nwv,.pvl,.legv,#dpAmt').forEach(el=>el.classList.add('hidden'));
+  } else {
+    btn.classList.remove('on');
+    btn.textContent='◉ PRIV';
+    document.querySelectorAll('.nwamt,.nwv,.pvl,.legv,#dpAmt').forEach(el=>el.classList.remove('hidden'));
+  }
+}
+
+function rClk(){
+  const n=new Date();
+  document.getElementById('clk').textContent=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase()+' · '+n.toTimeString().slice(0,8);
+}
+
+function renderBrief(){
+  document.getElementById('briefTxt').innerHTML=getBriefing();
+}
+
+function renderJournal(){
+  if(!S.journal)S.journal={};
+  const TS=getTS();
+  const jt=document.getElementById('jtxt');
+  if(jt&&!jt.dataset.dirty)jt.value=S.journal[TS]||'';
+}
+
+function renderHero(){
+  const xp=tXP();
+  const lvi=getLevelInfo(xp);
+  document.getElementById('lvn').textContent=lvi.level;
+  document.getElementById('lvRank').textContent=lvi.tierName;
+  document.getElementById('xpc').textContent=xp.toLocaleString();
+  document.getElementById('xpt').textContent=lvi.level<80?`/ ${lvi.nextThreshold.toLocaleString()} NEXT`:`MAX TIER`;
+  document.getElementById('xpf').style.width=lvi.pct+'%';
+  document.getElementById('strkn').textContent=currentStreak();
+
+  // Update level icon based on tier
+  const iconSvg=document.getElementById('lvIconSvg');
+  iconSvg.innerHTML=TIER_ICONS[lvi.tier].replace(/<svg[^>]*>|<\/svg>/g,'');
+  iconSvg.setAttribute('viewBox','0 0 100 100');
+  iconSvg.style.color='#d4a73c';
+  // Liquid fill based on overall level progress within tier (0-100%)
+  const tierProgress=((lvi.level-1)%10)*10+(lvi.pct/10);
+  document.getElementById('lvLiquid').style.height=Math.min(100,tierProgress)+'%';
+
+  // Net worth
+  const nw=totalNW();
+  document.getElementById('nwv').textContent=fmt(nw);
+  if(sheetOn()){
+    const sorted=S.sheet.rows.slice().sort((a,b)=>b.val-a.val);
+    document.getElementById('nwrows').innerHTML=sorted.map(r=>
+      `<div class="nwr"><span class="nwk">${(r.label||'').toUpperCase()}</span><span class="nwv">$${fmt(r.val)}</span></div>`
+    ).join('');
+  }else{
+    const checking=(S.cash&&S.cash.checking)||0;
+    const b=acctTot('brokerage'),ro=acctTot('roth'),dv=acctTot('dividend'),tr=acctTot('trading'),bt=(S.btc&&S.btc.value)||0,pl=S.parentLoan||0,dpf=(S.duplex&&S.duplex.saved)||0;
+    document.getElementById('nwrows').innerHTML=`
+      <div class="nwr"><span class="nwk">CHECKING</span><span class="nwv">$${fmt(checking)}</span></div>
+      <div class="nwr"><span class="nwk">DUPLEX FUND</span><span class="nwv">$${fmt(dpf)}</span></div>
+      <div class="nwr"><span class="nwk">BROKERAGE</span><span class="nwv">$${fmt(b)}</span></div>
+      <div class="nwr"><span class="nwk">ROTH IRA</span><span class="nwv">$${fmt(ro)}</span></div>
+      <div class="nwr"><span class="nwk">DIVIDEND</span><span class="nwv">$${fmt(dv)}</span></div>
+      <div class="nwr"><span class="nwk">TRADING</span><span class="nwv">$${fmt(tr)}</span></div>
+      <div class="nwr"><span class="nwk">BITCOIN</span><span class="nwv">$${fmt(bt)}</span></div>
+      <div class="nwr"><span class="nwk">PARENT LOAN</span><span class="nwv">$${fmt(pl)}</span></div>
+    `;
+  }
+
+  // Duplex
+  const dp=S.duplex;const dpS=duplexSaved();const dpPct=Math.min(100,Math.round(dpS/dp.target*100));
+  document.getElementById('dpc').textContent=fmt(dpS);
+  document.getElementById('dptag').textContent='$'+fmt(dpS)+' / $'+fmt(dp.target);
+  document.getElementById('dpbar').style.width=dpPct+'%';
+  document.getElementById('dppct').textContent=dpPct+'%';
+  document.getElementById('dprem').textContent='$'+fmt(Math.max(0,dp.target-dpS))+' to go';
+  const rem=Math.max(0,dp.target-dpS);
+  const weeksLeft=Math.ceil(rem/S.weekTarget);
+  const etaDate=getToday();etaDate.setDate(etaDate.getDate()+weeksLeft*7);
+  document.getElementById('dpeta').textContent=rem<=0?'> GOAL REACHED ✓':`> $${S.weekTarget}/wk → ${weeksLeft} wks → ${etaDate.toLocaleDateString('en-US',{month:'short',year:'numeric'}).toUpperCase()}`;
+
+  // API key status
+  const akInp=document.getElementById('apiKeyInp');
+  if(akInp&&S.apiKey&&!akInp.value)akInp.value=S.apiKey;
+  if(S.apiKey)document.getElementById('apiKeyStatus').textContent='> KEY ACTIVE: '+S.apiKey.slice(0,6)+'...';
+}
+
+function renderToday(){
+  const TS=getTS();
+  document.getElementById('tddate').textContent=getToday().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase();
+  const pct=dPct(TS);
+  document.getElementById('tdpct').textContent=pct+'%';
+  document.getElementById('tdbar').style.width=pct+'%';
+  document.getElementById('tdcore').textContent=dCDn(TS)+'/'+cH().length+' CORE';
+  document.getElementById('tdxp').textContent='+'+dXP(TS)+' XP';
+  const d=gd(TS);
+  const TMS={morning:'MORNING',day:'DAYTIME',night:'EVENING'};
+  let html='';
+  ['morning','day','night'].forEach(tm=>{
+    const hbs=S.habits.filter(h=>h.tm===tm);
+    if(!hbs.length)return;
+    html+=`<div class="tseg"><div class="tsegl">${TMS[tm]} TASKS</div>`;
+    html+=hbs.map(h=>{
+      const on=!!d.c[h.id];
+      return`<div class="trow"><div class="chk ${on?'on':''}" onclick="toggleH(${h.id})"></div><span class="tn ${on?'done':''}">${h.n}</span><span class="txp ${h.t==='bonus'?'bonus':''}">+${h.xp}</span></div>`;
+    }).join('');
+    html+='</div>';
+  });
+  document.getElementById('tasklist').innerHTML=html;
+  // Weekly
+  const wk=wkKey();
+  let whtml='<div class="tsegl">WEEKLY TASKS</div>';
+  (S.weeklyTasks||[]).forEach(wt=>{
+    const on=wt.done&&wt.done[wk];
+    whtml+=`<div class="trow"><div class="chk ${on?'on':''}" onclick="toggleWk(${wt.id})"></div><span class="tn ${on?'done':''}">${wt.n}</span></div>`;
+  });
+  document.getElementById('wklysect').innerHTML=whtml;
+  // Week cal
+  const days=wkDates();const lbls=['S','M','T','W','T','F','S'];let wxp=0;
+  document.getElementById('wkcal').innerHTML=days.map((dd,i)=>{
+    const ds=dd.toISOString().split('T')[0];
+    const TODAY_DATE=getToday();
+    const isF=dd>TODAY_DATE&&ds!==TS;
+    const isT=ds===TS;
+    const p=dPct(ds);
+    let cls='wkd';
+    if(isF)cls+=' future';
+    else if(p>=100)cls+=' full';
+    else if(p>0)cls+=' partial';
+    else cls+=' empty';
+    if(isT)cls+=' today';
+    if(!isF)wxp+=dXP(ds);
+    return`<div class="${cls}">${lbls[i]}</div>`;
+  }).join('');
+  document.getElementById('wkxp').textContent=wxp+' XP';
+  // Active quests overview - top 3 most urgent
+  const allQ=[...(S.mainQuests||[]),...(S.sideQuests||[])].filter(q=>!q.done);
+  allQ.sort((a,b)=>{
+    if(a.deadline&&b.deadline)return a.deadline.localeCompare(b.deadline);
+    if(a.deadline)return -1;if(b.deadline)return 1;return 0;
+  });
+  document.getElementById('ovquests').innerHTML=allQ.slice(0,4).map(questCardHTML).join('');
+}
+
+// Aggregate live P&L across every position that has a price (or a fixed manual value).
+function computePnl(){
+  let value=0,cost=0,dayChg=0,priced=0,total=0;
+  ['brokerage','roth','dividend','trading'].forEach(ak=>{
+    ((S.positions&&S.positions[ak])||[]).forEach(p=>{
+      total++;
+      const pr=lp(p.sym);
+      if(p.fixed){const v=p.mVal||0,c=p.avg||0;value+=v;cost+=c;priced++;return;}
+      if(pr){
+        const v=p.sh*pr,c=p.sh*p.avg;value+=v;cost+=c;priced++;
+        const dp=lpDay(p.sym);if(dp!=null)dayChg+=v-(v/(1+dp/100));
+      }
+    });
+  });
+  const pl=value-cost,plPct=cost>0?pl/cost*100:0;
+  const dayPct=(value-dayChg)>0?dayChg/(value-dayChg)*100:0;
+  return{value,cost,pl,plPct,dayChg,dayPct,priced,total};
+}
+function renderPnl(){
+  const el=document.getElementById('pnlStrip');if(!el)return;
+  const k=computePnl();
+  if(!k.priced){
+    el.className='pnl-strip empty';
+    el.innerHTML=`<div class="pnl-note">▸ Add a free price key in Settings ⚙ to see live portfolio value, total gain/loss, and today's move here. <span style="color:var(--gold)">finnhub.io</span> → paste key.</div>`;
+    return;
+  }
+  el.className='pnl-strip';
+  const money=v=>S.privacyMode?'•••':'$'+fmtD(Math.abs(v));
+  const plUp=k.pl>=0,dayUp=k.dayChg>=0;
+  const partial=k.priced<k.total?` · ${k.priced}/${k.total} priced`:'';
+  el.innerHTML=`
+    <div class="pnl-cell"><div class="pl">PORTFOLIO VALUE</div><div class="pv" style="color:var(--text)">${S.privacyMode?'$•••':'$'+fmtD(k.value)}</div><div class="ps" style="color:var(--faint)">${k.priced} positions${partial}</div></div>
+    <div class="pnl-cell"><div class="pl">TOTAL GAIN / LOSS</div><div class="pv" style="color:${plUp?'var(--gold)':'var(--red)'}">${plUp?'+':'-'}${money(k.pl)}</div><div class="ps" style="color:${plUp?'var(--gold)':'var(--red)'}">${plUp?'+':''}${k.plPct.toFixed(2)}% all-time</div></div>
+    <div class="pnl-cell"><div class="pl">TODAY</div><div class="pv" style="color:${dayUp?'var(--gold)':'var(--red)'}">${k.dayChg?(dayUp?'+':'-')+money(k.dayChg):'—'}</div><div class="ps" style="color:${dayUp?'var(--gold)':'var(--red)'}">${k.dayChg?(dayUp?'+':'')+k.dayPct.toFixed(2)+'%':'markets closed?'}</div></div>`;
+}
+function renderFin(){
+  safe(renderPnl);
+  const checking=(S.cash&&S.cash.checking)||0;
+  const b=acctTot('brokerage'),ro=acctTot('roth'),dv=acctTot('dividend'),tr=acctTot('trading'),bt=(S.btc&&S.btc.value)||0,pl=S.parentLoan||0;
+  const dpf=duplexSaved();
+  const tot=totalNW();
+  const inv=investedTotal();
+  document.getElementById('finmets').innerHTML=`
+    <div class="met"><div class="ml">NET WORTH</div><div class="mv" style="color:var(--gold);text-shadow:0 0 12px var(--goldGlow)">$${S.privacyMode?'•••':fmt(tot)}</div><div class="ms">all accounts</div></div>
+    <div class="met"><div class="ml">INVESTED</div><div class="mv" style="color:var(--teal);text-shadow:0 0 12px var(--tealGlow)">$${S.privacyMode?'•••':fmt(inv)}</div><div class="ms">stocks + ETFs</div></div>
+    <div class="met"><div class="ml">DUPLEX FUND</div><div class="mv" style="color:var(--gold)">$${S.privacyMode?'•••':fmt(dpf)}</div><div class="ms">${Math.round(dpf/S.duplex.target*100)}% of $${fmt(S.duplex.target)}</div></div>
+    <div class="met"><div class="ml">BITCOIN</div><div class="mv" style="color:var(--neon);text-shadow:0 0 12px var(--magentaGlow)">$${S.privacyMode?'•••':fmt(bt)}</div><div class="ms">+$5/day DCA</div></div>
+  `;
+  if(sheetOn()){
+    drawPie('pieacct',S.sheet.rows.map(r=>({label:r.label,val:r.val})),'legacct');
+  }else{
+    drawPie('pieacct',[{label:'Checking',val:checking},{label:'Duplex Fund',val:dpf},{label:'Brokerage',val:b},{label:'Roth IRA',val:ro},{label:'Dividend',val:dv},{label:'Trading',val:tr},{label:'Bitcoin',val:bt},{label:'Parent Loan',val:pl}],'legacct');
+  }
+
+  // All positions with header row
+  let ahtml=`<div class="pos-header"><div>SYMBOL</div><div>SHARES</div><div>LIVE PRICE</div><div>VALUE</div><div>P&L</div></div>`;
+  const accountLabels={brokerage:'BROKERAGE',roth:'ROTH IRA',dividend:'DIVIDEND ACCT',trading:'TRADING ACCT'};
+  ['brokerage','roth','dividend','trading'].forEach(ak=>{
+    const ps=(S.positions&&S.positions[ak])||[];
+    const acash=(S.cash&&S.cash[ak])||0;
+    if(!ps.length&&acash<=0)return;
+    ahtml+=`<div style="margin-top:14px"><div style="font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:var(--cyan);font-weight:700;padding:6px 0;border-bottom:1px solid var(--gold3);display:flex;justify-content:space-between"><span>▣ ${accountLabels[ak]}</span><span style="color:var(--gold)">$${S.privacyMode?'•••':fmt(acctTot(ak))}</span></div></div>`;
+    ahtml+=ps.map(pRowH).join('');
+    if(acash>0){
+      ahtml+=`<div class="prow"><div><div class="psym">CASH</div><div class="psub">Uninvested</div></div><div></div><div></div><div class="pvl${S.privacyMode?' hidden':''}">$${fmtD(acash)}</div><div></div></div>`;
+    }
+  });
+  // Bitcoin
+  ahtml+=`<div style="margin-top:14px"><div style="font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:var(--cyan);font-weight:700;padding:6px 0;border-bottom:1px solid var(--gold3);display:flex;justify-content:space-between"><span>▣ BITCOIN</span><span style="color:var(--gold)">$${S.privacyMode?'•••':fmt(bt)}</span></div></div>`;
+  ahtml+=`<div class="prow"><div><div class="psym">BTC</div><div class="psub">Self-custody · +$5/day DCA</div></div><div></div><div></div><div class="pvl${S.privacyMode?' hidden':''}" style="color:var(--neon)">$${fmt(bt)}</div><div class="ppct up">HOLD</div></div>`;
+  // Parent Loan
+  ahtml+=`<div style="margin-top:14px"><div style="font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:var(--cyan);font-weight:700;padding:6px 0;border-bottom:1px solid var(--gold3);display:flex;justify-content:space-between"><span>▣ PARENT LOAN</span><span style="color:var(--gold)">$${S.privacyMode?'•••':fmt(pl)}</span></div></div>`;
+  ahtml+=`<div class="prow"><div><div class="psym">LOAN</div><div class="psub">Property closing · expected back</div></div><div></div><div></div><div class="pvl${S.privacyMode?' hidden':''}">$${fmt(pl)}</div><div class="ppct up">HOLD</div></div>`;
+  document.getElementById('allpos').innerHTML=ahtml;
+
+  drawTrend();
+
+  // Account edit
+  if(sheetOn()){
+    document.getElementById('acctrows').innerHTML=`<div style="font-family:var(--mono);font-size:10px;color:var(--teal);line-height:1.7;letter-spacing:.03em">▣ SYNCED FROM GOOGLE SHEET<br><span style="color:var(--dim)">Net worth is pulled from your tracker. Edit the sheet, then hit SYNC in Settings ⚙. Manual entry is off while connected.</span></div>`;
+    return;
+  }
+  document.getElementById('acctrows').innerHTML=`
+    <div class="erow"><span style="flex:1;font-size:11px;color:var(--cyan);letter-spacing:.05em">CHECKING</span><input class="inpsm" type="number" id="ae-checking" value="${(S.cash&&S.cash.checking)||0}" min="0" step="0.01"></div>
+    <div class="erow"><span style="flex:1;font-size:11px;color:var(--cyan);letter-spacing:.05em">DUPLEX FUND</span><input class="inpsm" type="number" id="ae-duplex" value="${S.duplex.saved||0}" min="0"></div>
+    <div class="erow"><span style="flex:1;font-size:11px;color:var(--cyan);letter-spacing:.05em">BROKERAGE CASH</span><input class="inpsm" type="number" id="ae-brokerage" value="${(S.cash&&S.cash.brokerage)||0}" min="0" step="0.01"></div>
+    <div class="erow"><span style="flex:1;font-size:11px;color:var(--cyan);letter-spacing:.05em">ROTH CASH</span><input class="inpsm" type="number" id="ae-roth" value="${(S.cash&&S.cash.roth)||0}" min="0" step="0.01"></div>
+    <div class="erow"><span style="flex:1;font-size:11px;color:var(--cyan);letter-spacing:.05em">DIVIDEND CASH</span><input class="inpsm" type="number" id="ae-dividend" value="${(S.cash&&S.cash.dividend)||0}" min="0" step="0.01"></div>
+    <div class="erow"><span style="flex:1;font-size:11px;color:var(--cyan);letter-spacing:.05em">TRADING CASH</span><input class="inpsm" type="number" id="ae-trading" value="${(S.cash&&S.cash.trading)||0}" min="0" step="0.01"></div>
+    <div class="erow"><span style="flex:1;font-size:11px;color:var(--cyan);letter-spacing:.05em">BITCOIN VALUE</span><input class="inpsm" type="number" id="ae-btc" value="${(S.btc&&S.btc.value)||0}"></div>
+    <div class="erow"><span style="flex:1;font-size:11px;color:var(--cyan);letter-spacing:.05em">PARENT LOAN</span><input class="inpsm" type="number" id="ae-loan" value="${S.parentLoan||0}"></div>
+  `;
+}
+
+function tAE(){
+  aEO=!aEO;
+  document.getElementById('acctep').classList.toggle('open',aEO);
+}
+
+function saveAccts(){
+  if(!S.cash)S.cash={};
+  ['checking','brokerage','roth','dividend','trading'].forEach(a=>{
+    const el=document.getElementById('ae-'+a);
+    if(el)S.cash[a]=parseFloat(el.value)||0;
+  });
+  const btcEl=document.getElementById('ae-btc');if(btcEl)S.btc.value=parseFloat(btcEl.value)||0;
+  const loanEl=document.getElementById('ae-loan');if(loanEl)S.parentLoan=parseFloat(loanEl.value)||0;
+  const dpEl=document.getElementById('ae-duplex');if(dpEl)S.duplex.saved=parseFloat(dpEl.value)||0;
+  chkAuto();sv();aEO=false;
+  document.getElementById('acctep').classList.remove('open');
+  renderAll();
+  cel('▣ BALANCES UPDATED','Net worth recalculated');
+}
+
+let pEO=false;
+function tPE(){
+  pEO=!pEO;
+  document.getElementById('posep').classList.toggle('open',pEO);
+  if(pEO)renderPosRows();
+}
+
+function renderPosRows(){
+  const accts={brokerage:'BROKERAGE',roth:'ROTH IRA',dividend:'DIVIDEND',trading:'TRADING'};
+  let html='';
+  ['brokerage','roth','dividend','trading'].forEach(ak=>{
+    const ps=(S.positions&&S.positions[ak])||[];
+    ps.forEach((p,i)=>{
+      html+=`<div class="erow" style="margin-bottom:5px">
+        <input type="text" value="${accts[ak]}" disabled style="flex:0.8;background:var(--bg3);color:var(--faint);font-family:var(--mono);font-size:10px;padding:4px;border:1px solid var(--line)">
+        <input type="text" id="pos-sym-${ak}-${i}" value="${p.sym}" style="flex:0.6;font-family:var(--mono);font-size:10px;padding:4px;border:1px solid var(--line);background:var(--bg);color:var(--text)">
+        <input type="number" id="pos-sh-${ak}-${i}" value="${p.sh}" step="0.0001" style="flex:0.6;font-family:var(--mono);font-size:10px;padding:4px;border:1px solid var(--line);background:var(--bg);color:var(--gold);text-align:right">
+        <input type="number" id="pos-avg-${ak}-${i}" value="${p.avg}" step="0.01" style="flex:0.7;font-family:var(--mono);font-size:10px;padding:4px;border:1px solid var(--line);background:var(--bg);color:var(--gold);text-align:right">
+        <button class="btn btn-r btn-sm" onclick="delPos('${ak}',${i})" style="flex-shrink:0;padding:3px 6px">×</button>
+      </div>`;
+    });
+  });
+  document.getElementById('posrows').innerHTML=html;
+}
+
+function delPos(ak,i){
+  if(S.positions&&S.positions[ak]){
+    S.positions[ak].splice(i,1);
+    renderPosRows();
+  }
+}
+
+function addPos(){
+  const acct=prompt('Account (brokerage/roth/dividend/trading):','brokerage');
+  if(!acct||!S.positions[acct])return;
+  const sym=prompt('Symbol:','');
+  if(!sym)return;
+  S.positions[acct].push({sym:sym.toUpperCase(),n:sym,sh:0,avg:0,t:'stock'});
+  renderPosRows();
+}
+
+function savePositions(){
+  ['brokerage','roth','dividend','trading'].forEach(ak=>{
+    if(S.positions&&S.positions[ak]){
+      S.positions[ak].forEach((p,i)=>{
+        const symEl=document.getElementById(`pos-sym-${ak}-${i}`);
+        const shEl=document.getElementById(`pos-sh-${ak}-${i}`);
+        const avgEl=document.getElementById(`pos-avg-${ak}-${i}`);
+        if(symEl)p.sym=symEl.value.toUpperCase();
+        if(shEl)p.sh=parseFloat(shEl.value)||0;
+        if(avgEl)p.avg=parseFloat(avgEl.value)||0;
+      });
+    }
+  });
+  sv();pEO=false;
+  document.getElementById('posep').classList.remove('open');
+  renderAll();
+  cel('▣ POSITIONS UPDATED','Shares and costs saved');
+}
+
+function renderSpend(){
+  const TS=getTS();
+  const all=S.spending||[];
+  const now=getToday();
+  const sum=arr=>arr.reduce((a,s)=>a+(+s.amt||0),0);
+
+  const today=all.filter(s=>s.date===TS);
+  const week=all.filter(s=>{const d=daysBetween(s.date,TS);return d>=0&&d<7;});
+  const prevWeek=all.filter(s=>{const d=daysBetween(s.date,TS);return d>=7&&d<14;});
+  const monthKey=TS.slice(0,7);
+  const month=all.filter(s=>s.date.startsWith(monthKey));
+  const lm=new Date(now.getFullYear(),now.getMonth()-1,1);
+  const lmKey=lm.toISOString().slice(0,7);
+  const lastMonth=all.filter(s=>s.date.startsWith(lmKey));
+
+  const weekT=sum(week),prevWeekT=sum(prevWeek),monthT=sum(month),lastMonthT=sum(lastMonth);
+  const dayOfMonth=now.getDate();
+  const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const avgDay=dayOfMonth>0?monthT/dayOfMonth:0;
+  const projMonth=avgDay*daysInMonth;
+
+  document.getElementById('spend-today-tag').textContent='$'+fmtD(sum(today))+' today';
+  document.getElementById('spend-week').textContent='$'+fmtD(weekT);
+  document.getElementById('spend-month').textContent='$'+fmtD(monthT);
+  document.getElementById('spend-avg').textContent='$'+fmtD(avgDay);
+
+  const arrow=(cur,prev)=>{
+    if(prev<=0)return '<span style="color:var(--faint)">—</span>';
+    const pct=Math.round((cur-prev)/prev*100);
+    if(pct>0)return `<span style="color:var(--red)">▲ ${pct}% vs last</span>`;
+    if(pct<0)return `<span style="color:var(--teal)">▼ ${Math.abs(pct)}% vs last</span>`;
+    return '<span style="color:var(--faint)">flat</span>';
+  };
+  document.getElementById('spend-week-sub').innerHTML=arrow(weekT,prevWeekT);
+  document.getElementById('spend-month-sub').innerHTML=`proj $${fmt(projMonth)} · `+(lastMonthT>0?arrow(monthT,lastMonthT):'last mo $0');
+
+  const incEl=document.getElementById('income-inp');
+  if(incEl&&document.activeElement!==incEl)incEl.value=S.income||'';
+  if(S.income>0){
+    const left=S.income-monthT;
+    const el=document.getElementById('spend-invest');
+    el.textContent=(left<0?'-$':'$')+fmtD(Math.abs(left));
+    el.style.color=left>=0?'var(--teal)':'var(--red)';
+    document.getElementById('spend-invest-sub').textContent=`spent ${Math.round(monthT/S.income*100)}% of income`;
+    document.getElementById('income-note').textContent=left>=0?`$${fmt(left)} unspent so far`:`over by $${fmt(-left)}`;
+  }else{
+    document.getElementById('spend-invest').textContent='—';
+    document.getElementById('spend-invest-sub').textContent='set income below';
+    document.getElementById('income-note').textContent='';
+  }
+
+  const wants=month.filter(s=>!s.need),needs=month.filter(s=>s.need);
+  const wantsT=sum(wants),needsT=sum(needs);
+  document.getElementById('spend-nw-split').innerHTML=`<span style="color:var(--red)">W $${fmt(wantsT)}</span> · <span style="color:var(--teal)">N $${fmt(needsT)}</span>`;
+
+  const cats={};
+  month.forEach(s=>{cats[s.cat]=(cats[s.cat]||0)+(+s.amt||0);});
+  const catList=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const maxCat=catList.length?catList[0][1]:1;
+  document.getElementById('spend-by-cat').innerHTML=catList.length?catList.map(([k,v])=>{
+    const pct=monthT?Math.round(v/monthT*100):0;const w=Math.round(v/maxCat*100);
+    return `<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;margin-bottom:3px"><span style="font-weight:600">${k}</span><span class="spend-amt">$${fmtD(v)} · ${pct}%</span></div><div class="bt" style="height:6px"><div class="bf" style="width:${w}%;background:linear-gradient(90deg,var(--gold3),var(--gold))"></div></div></div>`;
+  }).join(''):'<div style="font-family:var(--mono);font-size:11px;color:var(--faint);padding:14px;text-align:center">No spending logged this month</div>';
+
+  // Leaks
+  let leakH='';
+  const cardInt=month.filter(s=>/card\s*interest|interest/i.test(s.cat)||/interest/i.test(s.desc));
+  const cardIntT=sum(cardInt);
+  if(cardIntT>0){
+    leakH+=`<div style="font-family:var(--body);font-size:12px;color:var(--text);line-height:1.5;margin-bottom:10px;padding:9px;background:rgba(255,48,96,.1);border-left:2px solid var(--red)"><strong style="color:var(--red)">Card interest this month: $${fmtD(cardIntT)}.</strong> This is pure waste at ~25% APR. Paying down the balance behind it beats the return on anything you're invested in — kill it first.</div>`;
+  }
+  const wcats={};
+  wants.forEach(s=>{wcats[s.cat]=(wcats[s.cat]||0)+(+s.amt||0);});
+  const wlist=Object.entries(wcats).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  if(!wlist.length&&!leakH){
+    leakH='<div style="font-family:var(--mono);font-size:11px;color:var(--faint);padding:6px 0">No "want" spending logged this month. Log purchases and tag them Want to surface leaks.</div>';
+  }else if(wlist.length){
+    leakH+=wlist.map(([k,v],i)=>{
+      const proj=Math.round(v/dayOfMonth*daysInMonth);
+      const share=wantsT?Math.round(v/wantsT*100):0;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)"><div><span style="font-family:var(--mono);font-weight:700;color:${i===0?'var(--red)':'var(--gold)'}">#${i+1} ${k}</span><div style="font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:2px">${share}% of your wants · trending ~$${fmt(proj)}/mo</div></div><span class="spend-amt" style="font-size:14px">$${fmtD(v)}</span></div>`;
+    }).join('');
+    const projTop=Math.round(wlist[0][1]/dayOfMonth*daysInMonth);
+    const half=Math.round(projTop/2);
+    leakH+=`<div style="font-family:var(--body);font-size:12px;color:var(--text);line-height:1.5;margin-top:10px;padding:9px;background:var(--bg3);border-left:2px solid var(--teal)">Cut <strong>${wlist[0][0]}</strong> in half → free up ~<strong style="color:var(--teal)">$${fmt(half)}/mo</strong> (≈<strong style="color:var(--teal)">$${fmt(half*12)}/yr</strong>) to invest instead.</div>`;
+  }
+  document.getElementById('spend-leaks').innerHTML=leakH;
+
+  const recent=all.slice(-20).reverse();
+  document.getElementById('spend-list').innerHTML=recent.length?recent.map(s=>`<div class="spend-row"><div><span style="font-family:var(--body);font-weight:500">${s.desc}</span> <span class="spend-cat">${s.cat}</span> <span style="font-family:var(--mono);font-size:8px;color:${s.need?'var(--teal)':'var(--faint)'}">${s.need?'NEED':'WANT'}</span><div style="font-family:var(--mono);font-size:8px;color:var(--faint);margin-top:2px;letter-spacing:.05em">${s.date}</div></div><span class="spend-amt">-$${fmtD(s.amt)}</span></div>`).join(''):'<div style="font-family:var(--mono);font-size:11px;color:var(--faint);padding:14px;text-align:center">No spending logged yet</div>';
+}
+
+function renderBody(){
+  const TS=getTS();
+  // Days since dislocation
+  const dsl=S.lastDislDate?daysBetween(S.lastDislDate,TS):0;
+  document.getElementById('dslDisl').textContent=Math.max(0,dsl);
+  // Rehab & gym consistency
+  let rehabDays=0,gymDays=0,totalDays=0;
+  for(let i=0;i<30;i++){
+    const d=getToday();d.setDate(d.getDate()-i);
+    const ds=d.toISOString().split('T')[0];
+    const dd=gd(ds);
+    totalDays++;
+    const rh=S.habits.find(h=>h.n.toLowerCase().includes('rehab'));
+    if(rh&&dd.c[rh.id])rehabDays++;
+    const gym=S.habits.find(h=>h.n.toLowerCase().includes('gym'));
+    if(gym&&dd.c[gym.id])gymDays++;
+  }
+  const rpct=totalDays?Math.round(rehabDays/totalDays*100):0;
+  const gpct=totalDays?Math.round(gymDays/totalDays*100):0;
+  document.getElementById('rehabPct').textContent=rpct+'%';
+  document.getElementById('gymPct').textContent=gpct+'%';
+  document.getElementById('gymBar').style.width=gpct+'%';
+  // Streaks
+  let gs=0,rs=0;
+  for(let i=0;i<365;i++){
+    const d=getToday();d.setDate(d.getDate()-i);
+    const ds=d.toISOString().split('T')[0];
+    const dd=gd(ds);
+    const gym=S.habits.find(h=>h.n.toLowerCase().includes('gym'));
+    if(gym&&dd.c[gym.id])gs++;else break;
+  }
+  for(let i=0;i<365;i++){
+    const d=getToday();d.setDate(d.getDate()-i);
+    const ds=d.toISOString().split('T')[0];
+    const dd=gd(ds);
+    const rh=S.habits.find(h=>h.n.toLowerCase().includes('rehab'));
+    if(rh&&dd.c[rh.id])rs++;else break;
+  }
+  document.getElementById('gymStreak').textContent=gs+' DAY'+(gs!==1?'S':'');
+  document.getElementById('rehabStreak').textContent=rs+' DAY'+(rs!==1?'S':'');
+  // Status pills
+  const b=S.body||{};
+  const huskyMap={not_started:'NOT STARTED',applied:'APPLIED',approved:'APPROVED'};
+  const huskyCls={not_started:'status-red',applied:'status-amber',approved:'status-green'};
+  document.getElementById('huskyStatus').innerHTML=`<span class="status-pill ${huskyCls[b.husky]||'status-red'}">${huskyMap[b.husky]||'NOT STARTED'}</span>`;
+  const mriMap={not_scheduled:'NOT SCHEDULED',scheduled:'SCHEDULED',completed:'COMPLETED'};
+  const mriCls={not_scheduled:'status-red',scheduled:'status-amber',completed:'status-green'};
+  document.getElementById('mriStatus').innerHTML=`<span class="status-pill ${mriCls[b.mri]||'status-red'}">${mriMap[b.mri]||'NOT SCHEDULED'}</span>`;
+  const surgMap={not_needed:'NOT NEEDED',considering:'CONSIDERING',scheduled:'SCHEDULED',done:'DONE'};
+  const surgCls={not_needed:'status-green',considering:'status-amber',scheduled:'status-red',done:'status-green'};
+  document.getElementById('surgeryStatus').innerHTML=`<span class="status-pill ${surgCls[b.surgery]||'status-green'}">${surgMap[b.surgery]||'NOT NEEDED'}</span>`;
+  // Date input
+  const dislInp=document.getElementById('lastDislDate');
+  if(dislInp&&S.lastDislDate)dislInp.value=S.lastDislDate;
+  // ROM
+  const rom=b.rom||{forward:5,side:4,overhead:3,behind:2};
+  document.getElementById('romSection').innerHTML=['forward','side','overhead','behind'].map(k=>{
+    const v=rom[k]||0;
+    return`<div class="rom-row"><span style="font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;font-size:11px;color:var(--cyan)">${k}</span><div class="rom-bar"><div class="rom-fill" style="width:${v*10}%;background:${v>=7?'var(--teal)':v>=4?'var(--gold)':'var(--red)'};box-shadow:0 0 6px ${v>=7?'var(--tealGlow)':v>=4?'var(--goldGlow)':'var(--redGlow)'}"></div></div><input class="inpsm" type="number" id="rom-${k}" value="${v}" min="1" max="10" style="width:48px;font-size:11px;padding:3px 6px"></div>`;
+  }).join('');
+  // Sleep
+  const last14=[];
+  for(let i=13;i>=0;i--){
+    const d=getToday();d.setDate(d.getDate()-i);
+    const ds=d.toISOString().split('T')[0];
+    last14.push({d:ds,v:S.sleep&&S.sleep[ds]});
+  }
+  const todaySleep=S.sleep&&S.sleep[TS];
+  document.getElementById('sleepY').style.background=todaySleep===true?'var(--teal)':'';
+  document.getElementById('sleepY').style.color=todaySleep===true?'var(--bg)':'';
+  document.getElementById('sleepN').style.background=todaySleep===false?'var(--red)':'';
+  document.getElementById('sleepN').style.color=todaySleep===false?'#fff':'';
+  document.getElementById('sleepHistory').innerHTML=last14.map(s=>{
+    const styles=s.v===true?'background:rgba(0,224,144,.3);color:var(--teal);border:1px solid var(--teal)':s.v===false?'background:rgba(255,48,96,.2);color:var(--red);border:1px solid var(--red)':'background:var(--bg);color:var(--faint);border:1px solid var(--line)';
+    return`<span style="display:inline-block;width:18px;height:18px;margin-right:3px;text-align:center;line-height:18px;font-size:9px;font-weight:700;${styles}">${s.v===true?'✓':s.v===false?'✗':'·'}</span>`;
+  }).join('');
+}
+
+function renderQuests(){
+  autoQuests();
+  const filter=S.questFilter||'all';
+  const TS=getTS();
+  let quests=[];
+  const all=[...(S.lifeQuests||[]),...(S.mainQuests||[]),...(S.sideQuests||[])];
+  // URGENT FIRST: sort by deadline ascending, life quests last
+  const sortFn=(a,b)=>{
+    if(a.kind==='life'&&b.kind!=='life')return 1;
+    if(b.kind==='life'&&a.kind!=='life')return -1;
+    if(a.done&&!b.done)return 1;
+    if(b.done&&!a.done)return -1;
+    if(a.deadline&&b.deadline)return a.deadline.localeCompare(b.deadline);
+    if(a.deadline)return -1;
+    if(b.deadline)return 1;
+    return 0;
+  };
+  if(filter==='all')quests=all.slice().sort(sortFn);
+  else if(filter==='urgent')quests=all.filter(q=>!q.done&&q.deadline&&daysBetween(TS,q.deadline)<=14).sort(sortFn);
+  else if(filter==='main')quests=(S.mainQuests||[]).slice().sort(sortFn);
+  else if(filter==='side')quests=(S.sideQuests||[]).slice().sort(sortFn);
+  else if(filter==='life')quests=(S.lifeQuests||[]).slice();
+  else if(filter==='done')quests=all.filter(q=>q.done);
+  document.getElementById('quest-list').innerHTML=quests.length?quests.map(questCardHTML).join(''):'<div style="text-align:center;padding:30px;font-family:var(--mono);color:var(--faint);font-size:11px">NO QUESTS HERE YET — hit + NEW QUEST</div>';
+  renderQuestEditor();
+}
+
+// XP a skill earned specifically from completed quests (for the breakdown line)
+function skQuestXP(sid){let t=0;allQuests().forEach(q=>{if(q.done&&q.skill===sid)t+=q.xp||0;});return t;}
+function renderSkills(){
+  document.getElementById('sklist').innerHTML=(S.skills||[]).map(sk=>{
+    const xp=skXP(sk.id);const lv=skLv(xp);
+    const perks=SKILL_PERKS[sk.id]||[];
+    const c=SKILL_COLORS[sk.id]||sk.c;
+    const qxp=skQuestXP(sk.id);
+    const toNext=lv.next?lv.next-xp:0;
+    const nextPerk=perks.find(p=>p.lv>lv.lv);
+    return`<div class="skill-node" style="border-color:${c}30">
+      <div class="skill-glow" style="background:radial-gradient(ellipse at 25% 40%,${c},transparent 62%)"></div>
+      <div class="sn-lvlbar" style="width:${lv.pct}%;background:${c};box-shadow:0 0 10px ${c}"></div>
+      <div class="sn-top">
+        <div class="sn-icon" style="color:${c};border-color:${c};box-shadow:0 0 18px ${c}50">${sk.n.charAt(0)}</div>
+        <div class="sn-info">
+          <div class="sn-name" style="color:${c}">${sk.n}</div>
+          <div class="sn-rank">LVL ${lv.lv}${lv.next?' · '+toNext+' XP to LVL '+(lv.lv+1):' · MAXED'}</div>
+        </div>
+        <div class="sn-xp" style="color:${c}">${xp.toLocaleString()}<br><span style="font-size:8px;color:var(--dim)">TOTAL XP</span></div>
+      </div>
+      <div class="sn-bar"><div class="sn-fill" style="width:${lv.pct}%;background:${c}"></div></div>
+      <div class="sn-meta">
+        ${nextPerk?`<span style="color:${c}">▸ NEXT: ${nextPerk.n} @ LVL ${nextPerk.lv}</span>`:`<span style="color:${c}">▸ ALL PERKS UNLOCKED</span>`}
+        ${qxp>0?`<span class="sn-fromq">${qxp} XP from quests</span>`:''}
+      </div>
+      <div class="sn-perks">${perks.map(p=>`<span class="perk ${lv.lv>=p.lv?'unlocked':'locked'}" style="${lv.lv>=p.lv?`border-color:${c}60;color:${c}`:''}">${lv.lv>=p.lv?'✓ ':'○ '}${p.n}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('achlist').innerHTML=(S.achievements||[]).map(a=>{
+    const sb=!a.done&&!a.auto;
+    return`<div class="arow"><div class="aic ${a.done?'done':'locked'}">${a.done?'✓':'?'}</div><div><div class="an ${a.done?'':'locked'}">${a.n}</div><div class="asub">${a.sub}</div></div><div style="display:flex;align-items:center"><span class="axp ${a.done?'':'locked'}">+${a.xp}</span>${sb?`<button class="mbtn" onclick="manUnlock('${a.id}')">DONE</button>`:''}</div></div>`;
+  }).join('');
+}
+
+// ============ MONTH NAVIGATION STATE ============
+let viewMonthOffset=0; // 0 = current month, -1 = last month, +1 = next, -12 = last year, etc.
+
+function navMonth(delta){
+  viewMonthOffset+=delta;
+  renderLog();
+}
+function navMonthToday(){
+  viewMonthOffset=0;
+  renderLog();
+}
+
+function renderLog(){
+  const TODAY_DATE=getToday();
+  const TS=getTS();
+  // Calculate viewed month based on offset
+  const viewDate=new Date(TODAY_DATE.getFullYear(),TODAY_DATE.getMonth()+viewMonthOffset,1);
+  const yr=viewDate.getFullYear(),mn=viewDate.getMonth();
+  const isCurrentMonth=(yr===TODAY_DATE.getFullYear()&&mn===TODAY_DATE.getMonth());
+  const M=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  document.getElementById('molbl').textContent=M[mn]+' '+yr;
+  const dim=new Date(yr,mn+1,0).getDate(),fd=new Date(yr,mn,1).getDay();
+  let cells='';
+  for(let i=0;i<fd;i++)cells+='<div></div>';
+  let mxp=0;
+  let daysWithData=0,totalPastDays=0;
+  for(let i=1;i<=dim;i++){
+    const ds=yr+'-'+String(mn+1).padStart(2,'0')+'-'+String(i).padStart(2,'0');
+    const dd=new Date(yr,mn,i);
+    const iF=dd>TODAY_DATE;
+    const iT=ds===TS;
+    const p=dPct(ds);
+    const hasJ=S.journal&&S.journal[ds]&&S.journal[ds].trim();
+    let cls='moday';
+    if(iF)cls+=' future';
+    else if(p>=100){cls+=' full';daysWithData++;}
+    else if(p>0){cls+=' partial';daysWithData++;}
+    else if(daysBetween(ds,TS)>0)cls+=' red';
+    if(iT)cls+=' today';
+    if(hasJ)cls+=' has-journal';
+    if(!iF){mxp+=dXP(ds);totalPastDays++;}
+    cells+=`<div class="${cls}" onclick="viewJournalDay('${ds}')" title="${ds}">${i}</div>`;
+  }
+  document.getElementById('mogrid').innerHTML=cells;
+  const mp=Math.min(100,Math.round(mxp/1500*100));
+  document.getElementById('mobar').style.width=mp+'%';
+  document.getElementById('moxplbl').textContent=mxp+' / 1500';
+  // Journal viewer
+  const jvDate=S.journalViewDate||TS;
+  const entry=(S.journal&&S.journal[jvDate])||'';
+  const dateLabel=new Date(jvDate+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).toUpperCase();
+  document.getElementById('jvDate').textContent=dateLabel;
+  const dPctV=dPct(jvDate);
+  document.getElementById('jvStatus').textContent=dPctV>=100?'✓ FULL DAY':dPctV>0?dPctV+'% DONE':'';
+  document.getElementById('journalViewer').innerHTML=entry?`<div style="font-family:var(--body);font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap">${entry.replace(/</g,'&lt;')}</div>`:'<div class="journal-empty">No journal entry for this day.</div>';
+}
+
+function tHE(){hEO=!hEO;document.getElementById('habitep').classList.toggle('open',hEO);if(hEO)renderHRows();}
+function renderHRows(){
+  document.getElementById('habitrows').innerHTML=(S.habits||[]).map(h=>`<div class="erow"><input type="text" id="hen${h.id}" value="${h.n.replace(/"/g,'&quot;')}"><input type="number" id="hex${h.id}" value="${h.xp}" min="5" max="200" step="5"><select id="het${h.id}"><option value="core" ${h.t==='core'?'selected':''}>core</option><option value="bonus" ${h.t==='bonus'?'selected':''}>bonus</option></select><select id="hetm${h.id}"><option value="morning" ${h.tm==='morning'?'selected':''}>AM</option><option value="day" ${h.tm==='day'?'selected':''}>DAY</option><option value="night" ${h.tm==='night'?'selected':''}>PM</option></select><button class="btn btn-r btn-sm" onclick="delH(${h.id})">×</button></div>`).join('');
+}
+function addHabit(){S.habits.push({id:Date.now(),n:'New habit',xp:10,t:'core',tm:'day',sk:[]});renderHRows();}
+function delH(id){S.habits=S.habits.filter(h=>h.id!==id);renderHRows();}
+function saveHabits(){
+  S.habits=S.habits.map(h=>({...h,n:document.getElementById('hen'+h.id)?.value||h.n,xp:parseInt(document.getElementById('hex'+h.id)?.value)||h.xp,t:document.getElementById('het'+h.id)?.value||h.t,tm:document.getElementById('hetm'+h.id)?.value||h.tm}));
+  sv();hEO=false;document.getElementById('habitep').classList.remove('open');renderAll();
+  cel('▣ HABITS SAVED','Daily flow updated');
+}
+
+function exportData(){
+  const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(b);
+  const a=document.createElement('a');
+  a.href=u;a.download='life-os-v4-backup-'+getTS()+'.json';
+  a.click();URL.revokeObjectURL(u);
+  cel('▣ BACKUP EXPORTED','Save this file somewhere safe');
+}
+function importData(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const p=JSON.parse(e.target.result);
+      if(p&&p.habits){S=migrateState(p);sv();renderAll();cel('▣ IMPORT COMPLETE','Backup restored');}
+    }catch(err){alert('Invalid backup file');}
+  };
+  r.readAsText(f);
+}
+function resetData(){
+  if(!confirm('Reset ALL data? Export backup first.'))return;
+  S=JSON.parse(JSON.stringify(DEF));sv();renderAll();
+}
+
+// ============ EVENT WIRING ============
+document.getElementById('jtxt').addEventListener('input',()=>document.getElementById('jtxt').dataset.dirty='1');
+document.getElementById('savinp').addEventListener('keypress',e=>{if(e.key==='Enter')addSav();});
+// Net-worth chart scrubbing (mouse + touch)
+(function(){
+  const c=document.getElementById('trendchart');if(!c)return;
+  c.addEventListener('mousemove',trendPointerMove);
+  c.addEventListener('mouseleave',trendPointerLeave);
+  c.addEventListener('touchstart',e=>{trendPointerMove(e);},{passive:true});
+  c.addEventListener('touchmove',e=>{trendPointerMove(e);e.preventDefault();},{passive:false});
+  c.addEventListener('touchend',trendPointerLeave);
+  // reflect saved range on the buttons + redraw on resize
+  window.addEventListener('resize',()=>{clearTimeout(window._rz);window._rz=setTimeout(drawTrend,150);});
+})();
+document.querySelectorAll('#rangeRow .rbtn').forEach(b=>b.classList.toggle('on',+b.dataset.r===(S.trendRange||0)));
+
+// ============ STARTUP ============
+renderAll();
+if(S.apiKey)fetchPrices();
+setInterval(rClk,1000);
+if(S.apiKey)setInterval(fetchPrices,5*60*1000);
+// Keep tasks fresh past midnight: check every 60s, roll the day over cleanly
+if(!S.lastActiveDay)S.lastActiveDay=getTS();
+setInterval(()=>{
+  const t=getTS();
+  if(t!==S.lastActiveDay){S.lastActiveDay=t;sv();}
+  renderAll();
+},60000);
+// Auto-pull the Google Sheet on open, if a link is connected
+if(S.sheet&&S.sheet.url)syncSheetFromUrl(true);
+
+</script>
+</body>
+</html>
